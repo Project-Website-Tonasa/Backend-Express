@@ -685,7 +685,7 @@ const getDetailLapHarian = async (req, res) => {
       values: [id],
     };
     const poolDescLH = await pool.query(queryGetDescLH);
-    const descLH = poolDescLH.rows[0];
+    // const descLH = poolDescLH.rows[0];
 
     const queryGetTenaKer = {
       // eslint-disable-next-line max-len
@@ -771,12 +771,11 @@ const getDetailLapHarian = async (req, res) => {
 
 const editDetailLapHarian = async (req, res) => {
   try {
-    // id dari tabel laporan
     const { id } = req.params;
     const {
-      noProyek, idUser, tgl, aktivitas, rencana, note, jabatanhrini, jmlhhrini,
-      jabatanbsk, jmlhbsk, baik, mendung, hujanTinggi, hujanRendah, alat, qty, masalah,
-      solusi, idNote, idTkhrini, idTkbsk, idAlatKerja, idCuaca,
+      tgl,
+      aktivitas, rencana, note, jabatanhrini, jmlhhrini,
+      jabatanbsk, jmlhbsk, baik, mendung, hujanTinggi, hujanRendah, alat, qty, masalah, solusi,
     } = req.body;
 
     // Validate the body request
@@ -785,7 +784,9 @@ const editDetailLapHarian = async (req, res) => {
       throw new InvariantError('Aktivitas or Rencana or Jabatan or jumlah or Alat or qty wajib diisi!');
     }
 
-    if (typeof (aktivitas) !== 'object' || typeof (rencana) !== 'object' || typeof (baik) !== 'object' || typeof (mendung) !== 'object' || typeof (hujanTinggi) !== 'object' || typeof (hujanRendah) !== 'object' || typeof (jabatanhrini) !== 'object' || typeof (jmlhhrini) !== 'object' || typeof (jabatanbsk) !== 'object' || typeof (jmlhbsk) !== 'object' || typeof (alat) !== 'object' || typeof (qty) !== 'object' || typeof (masalah) !== 'object' || typeof (solusi) !== 'object') {
+    console.log(!Array.isArray(aktivitas));
+    // eslint-disable-next-line max-len
+    if (!Array.isArray(aktivitas) || !Array.isArray(rencana) || !Array.isArray(baik) || !Array.isArray(mendung) || !Array.isArray(hujanTinggi) || !Array.isArray(hujanRendah) || !Array.isArray(jabatanhrini) || !Array.isArray(jmlhhrini) || !Array.isArray(jabatanbsk) || !Array.isArray(jmlhbsk) || !Array.isArray(alat) || !Array.isArray(qty) || !Array.isArray(masalah) || !Array.isArray(solusi)) {
       throw new InvariantError('Pastikan semua tipe data tiap field sudah benar');
     }
 
@@ -794,59 +795,38 @@ const editDetailLapHarian = async (req, res) => {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
 
-    const aktivitasStr = `[${aktivitas}]`;
-    const rencanaStr = `[${rencana}]`;
-    const noteStr = `[${note}]`;
-    const baikStr = `[${baik}]`;
-    const mendungStr = `[${mendung}]`;
-    const hujanTinggiStr = `[${hujanTinggi}]`;
-    const hujanRendahStr = `[${hujanRendah}]`;
-
-    const qIdData = {
-      text: 'SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE d.no_proyek = $1',
-      values: [noProyek],
+    // Deleting Previous data
+    const qDelLaphar = {
+      text: 'DELETE FROM lap_harian WHERE id_laporan = $1;',
+      values: [id],
     };
-    const resQId = await pool.query(qIdData);
-    if (!resQId.rows.length) {
-      throw new NotFoundError(`noProyek ${noProyek} tidak ditemukan`);
-    }
+    await pool.query(qDelLaphar);
 
-    const qIdKon = {
-      text: 'SELECT id_user FROM kontraktor_conn WHERE id_user = $1',
-      values: [idUser],
-    };
-    const resQIdKon = await pool.query(qIdKon);
-    if (!resQIdKon.rows.length) {
-      throw new NotFoundError('Pengguna tidak ditemukan atau tidak memiliki role kontraktor');
-    }
-
+    // // UNCOMMENT JIKA CREATED AT DAPAT BERUBAH SESUAI DENGAN TANGGAL EDITNYA
     const currDate = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
     const tglLap = Date.parse(tgl);
     const status = tglLap < currDate ? 'Tepat Waktu' : 'Terlambat';
 
-    // const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
-    // const qLap = {
-    //   textq: 'INSERT INTO laporan (id, jenis_laporan, urutan_lap, created_at, catatan, status, id_datum, id_user) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7) RETURNING *;',
-    //   text: 'UPDATE laporan SET (urutan_lap, '
-    //   values: ['Laporan Harian', urutanLap, createdAt, null, 'Ditinjau', resQId.rows[0].id_datum, idUser],
-    // };
-    // const rLap = await pool.query(qLap);
-
-    const qLapHar = {
-      text: 'UPDATE lap_harian SET ( aktivitas, rencana, status, tgl, note) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6) WHERE id_laporan = $1 RETURNING *;',
-      values: [aktivitasStr, rencanaStr, status, tgl, noteStr],
+    const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
+    const qUpdateLap = {
+      text: 'UPDATE laporan SET created_at = $1 WHERE id = $2 RETURNING *',
+      values: [createdAt, id],
     };
-    const rLapHar = await pool.query(qLapHar);
+    // const poolLap = await pool.query(qUpdateLap);
+    await pool.query(qUpdateLap);
+
+    const qInsertLapHar = {
+      text: 'INSERT INTO lap_harian (id, id_laporan, aktivitas, rencana, status, tgl, note) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6) RETURNING *;',
+      values: [id, aktivitas, rencana, status, tgl, note],
+    };
+    const poolLapHar = await pool.query(qInsertLapHar);
 
     const ptenKerjaHrIni = [];
     let qTenKerjaHrIni;
     for (let i = 0; i < jabatanhrini.length; i += 1) {
       qTenKerjaHrIni = {
-        // text: 'INSERT INTO tenaga_kerja (id, jabatan, jmlh, status_hari, id_lap_harian) VALUES (DEFAULT, $1, $2, $3, $4)',
-        text: 'UPDATE tenaga_kerja SET (jabatan, jmlh, status_hari, id_lap_harian) VALUES (DEFAULT, $1, $2, $3, $4)',
-        values: [
-          jabatanhrini[i], jmlhhrini[i], 'hari ini', rLapHar.rows[0].id,
-        ],
+        text: 'INSERT INTO tenaga_kerja (id, jabatan, jmlh, status_hari, id_lap_harian) VALUES (DEFAULT, $1, $2, $3, $4)',
+        values: [jabatanhrini[i], jmlhhrini[i], 'hari ini', poolLapHar.rows[0].id],
       };
       ptenKerjaHrIni.push(pool.query(qTenKerjaHrIni));
     }
@@ -856,25 +836,14 @@ const editDetailLapHarian = async (req, res) => {
     for (let i = 0; i < jabatanbsk.length; i += 1) {
       qTenKerjaBsk = {
         text: 'INSERT INTO tenaga_kerja (id, jabatan, jmlh, status_hari, id_lap_harian) VALUES (DEFAULT, $1, $2, $3, $4)',
-        values: [
-          jabatanbsk[i],
-          jmlhbsk[i],
-          'besok',
-          rLapHar.rows[0].id,
-        ],
+        values: [jabatanbsk[i], jmlhbsk[i], 'besok', poolLapHar.rows[0].id],
       };
       ptenKerjaBsk.push(pool.query(qTenKerjaBsk));
     }
 
     const qkondCuaca = {
       text: 'INSERT INTO kond_cuaca (id, baik, mendung, hujan_tinggi, hujan_rendah, id_lap_harian) VALUES (DEFAULT, $1, $2, $3, $4, $5)',
-      values: [
-        baikStr,
-        mendungStr,
-        hujanTinggiStr,
-        hujanRendahStr,
-        rLapHar.rows[0].id,
-      ],
+      values: [baik, mendung, hujanTinggi, hujanRendah, poolLapHar.rows[0].id],
     };
 
     const pAlatKerja = [];
@@ -882,11 +851,7 @@ const editDetailLapHarian = async (req, res) => {
     for (let i = 0; i < alat.length; i += 1) {
       qAlatKerja = {
         text: 'INSERT INTO alat_kerja (id, alat, qty, id_lap_harian) VALUES (DEFAULT, $1, $2, $3)',
-        values: [
-          alat[i],
-          qty[i],
-          rLapHar.rows[0].id,
-        ],
+        values: [alat[i], qty[i], poolLapHar.rows[0].id],
       };
       pAlatKerja.push(pool.query(qAlatKerja));
     }
@@ -896,11 +861,7 @@ const editDetailLapHarian = async (req, res) => {
     for (let i = 0; i < masalah.length; i += 1) {
       qNote = {
         text: 'INSERT INTO note (id, masalah, solusi, id_lap_harian) VALUES (DEFAULT, $1, $2, $3)',
-        values: [
-          masalah[i],
-          solusi[i],
-          rLapHar.rows[0].id,
-        ],
+        values: [masalah[i], solusi[i], poolLapHar.rows[0].id],
       };
       pNote.push(pool.query(qNote));
     }
@@ -919,8 +880,10 @@ const editDetailLapHarian = async (req, res) => {
       message: 'laporan has been created successfully',
     });
   } catch (e) {
+    console.error(e);
+
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(400).send({
         status: 'fail',
         message: e.message,
       });
@@ -945,4 +908,5 @@ module.exports = {
   previewPdf,
   createLapHarian,
   getDetailLapHarian,
+  editDetailLapHarian,
 };
