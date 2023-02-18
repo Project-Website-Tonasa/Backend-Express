@@ -1,11 +1,35 @@
 const fs = require('fs');
 const path = require('path');
+const puppeteer = require('puppeteer');
+const fetch = require('node-fetch');
+// import fetch from "node-fetch";
+const hbs = require('handlebars');
+const fse = require('fs-extra');
 const pool = require('../config/db');
 const ClientError = require('../exceptions/clientError');
 const InvariantError = require('../exceptions/invariantError');
 const NotFoundError = require('../exceptions/notFoundError');
 
 const baseUrl = 'http://localhost:3000/';
+const compilehtml = async (data) => {
+  const filehtml = path.join(process.cwd(), 'resources\\', 'formGeneratePDF.hbs');
+  const file = await fse.readFile(filehtml, 'utf8');
+
+  return hbs.compile(file)(data);
+};
+
+const fetchData = async (idLap) => {
+  const setting = {
+    method: 'GET',
+    // headers: myHeaders,
+    redirect: 'follow',
+  };
+  const response = await fetch(`http://localhost:3000/detaillapHarian/${idLap}`, setting);
+  // const response = await fetch(url, setting);
+  const dataLap = await response.json();
+  console.log('ini datanyaa', dataLap.data);
+  return dataLap.data;
+};
 
 const resLap = (data) => {
   const options = {
@@ -13,7 +37,7 @@ const resLap = (data) => {
     month: 'short',
     day: 'numeric',
   };
-  const objData = data.map((obj) => (typeof (obj.id) === 'number' ? {
+  let objData = data.map((obj) => (typeof (obj.id) === 'number' ? {
     ...obj,
     file: {
       download: `${baseUrl}download/${obj.file}`,
@@ -22,6 +46,15 @@ const resLap = (data) => {
     created_at: (obj.created_at).toLocaleString('id-ID', options),
   } : obj));
 
+  objData = objData.map((obj) => (!obj.catatan ? {
+    ...obj,
+    catatan: '-',
+  } : obj));
+
+  objData = objData.map((obj) => (obj.urutan_lap ? {
+    ...obj,
+    jenis_laporan: `${obj.jenis_laporan} ke-${obj.urutan_lap}`,
+  } : obj));
   return objData;
 };
 
@@ -59,7 +92,7 @@ const createLaporan = async (req, res) => {
       throw new NotFoundError('Pengguna tidak ditemukan atau tidak memiliki role kontraktor');
     }
 
-    const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
+    const createdAt = new Date().toJSON().slice(0, 10).replace(/-/g, '/');
     const query = {
       text: `INSERT INTO laporan (id, jenis_laporan, urutan_lap, file, created_at, catatan, status, id_datum, id_user) VALUES (DEFAULT, '${jenisLaporan}', '${urutanLap}', '${namaFile}', '${createdAt}', null, 'Ditinjau', '${resQId.rows[0].id_datum}', '${idUser}') RETURNING *;`,
     };
@@ -427,20 +460,22 @@ const createLapHarian = async (req, res) => {
       qty,
       masalah,
       solusi,
+      mhToday,
+      mhLstDay,
     } = req.body;
 
     // Validate the body request
     // eslint-disable-next-line max-len
-    if (!aktivitas || !rencana || !jabatanhrini || !jmlhhrini || !alat || !qty || !jabatanbsk || !jmlhbsk) {
-      throw new InvariantError('Aktivitas or Rencana or Jabatan or jumlah or Alat or qty wajib diisi!');
+    if (!aktivitas || !rencana || !jabatanhrini || !jmlhhrini || !alat || !qty || !jabatanbsk || !jmlhbsk || !mhToday || !mhLstDay) {
+      throw new InvariantError('Pastikan setiap field telah diisi!');
     }
 
-    if (typeof (rencana) !== 'object' || typeof (baik) !== 'object' || typeof (mendung) !== 'object' || typeof (hujanTinggi) !== 'object' || typeof (hujanRendah) !== 'object' || typeof (jabatanhrini) !== 'object' || typeof (jmlhhrini) !== 'object' || typeof (jabatanbsk) !== 'object' || typeof (jmlhbsk) !== 'object' || typeof (alat) !== 'object' || typeof (qty) !== 'object' || typeof (masalah) !== 'object' || typeof (solusi) !== 'object') {
+    if (typeof (aktivitas) !== 'object' || typeof (rencana) !== 'object' || typeof (note) !== 'object' || typeof (baik) !== 'object' || typeof (mendung) !== 'object' || typeof (hujanTinggi) !== 'object' || typeof (hujanRendah) !== 'object' || typeof (jabatanhrini) !== 'object' || typeof (jmlhhrini) !== 'object' || typeof (jabatanbsk) !== 'object' || typeof (jmlhbsk) !== 'object' || typeof (alat) !== 'object' || typeof (qty) !== 'object' || typeof (masalah) !== 'object' || typeof (solusi) !== 'object' || typeof (mhToday) !== 'object' || typeof (mhLstDay) !== 'object') {
       throw new InvariantError('Pastikan semua tipe data tiap field sudah benar');
     }
 
     // eslint-disable-next-line max-len
-    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length) {
+    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length) {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
 
@@ -467,9 +502,10 @@ const createLapHarian = async (req, res) => {
     const status = tglLap < currDate ? 'Tepat Waktu' : 'Terlambat';
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
+    const pdfName = `${Date.now()}-Lap-${noProyek}-lapharian.pdf`;
     const qLap = {
-      text: 'INSERT INTO laporan (id, jenis_laporan, urutan_lap, created_at, catatan, status, id_datum, id_user) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7) RETURNING *;',
-      values: ['Laporan Harian', urutanLap, createdAt, null, 'Ditinjau', resQId.rows[0].id_datum, idUser],
+      text: 'INSERT INTO laporan (id, jenis_laporan, urutan_lap, created_at, catatan, status, file, id_datum, id_user) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
+      values: ['Laporan Harian', urutanLap, createdAt, null, 'Ditinjau', pdfName, resQId.rows[0].id_datum, idUser],
     };
     const rLap = await pool.query(qLap);
 
@@ -548,15 +584,72 @@ const createLapHarian = async (req, res) => {
       pNote.push(pool.query(qNote));
     }
 
+    const pMh = [];
+    let qMh;
+    for (let i = 0; i < mhToday.length; i += 1) {
+      qMh = {
+        text: 'INSERT INTO man_hours (id, last_day, today, acum, id_lap_harian) VALUES (DEFAULT, $1, $2, $3, $4)',
+        values: [
+          mhLstDay[i],
+          mhToday[i],
+          mhLstDay[i] + mhToday[i],
+          rLapHar.rows[0].id,
+        ],
+      };
+      pMh.push(pool.query(qMh));
+    }
+
     try {
       await Promise.all(ptenKerjaHrIni);
       await Promise.all(ptenKerjaBsk);
       await pool.query(qkondCuaca);
       await Promise.all(pAlatKerja);
       await Promise.all(pNote);
+      await Promise.all(pMh);
     } catch (e) {
       throw new InvariantError(e);
     }
+    // const qLapFile = {
+    //   text: 'UPDATE laporan SET (file) VALUES ($1) WHERE id = $2 RETURNING *;',
+    //   values: [pdfName, rLap.rows[0].id],
+    // };
+    // try {
+    //   await pool.query(qLapFile);
+    // } catch (e) {
+    //   throw new InvariantError(e);
+    // }
+    try {
+      // const myHeaders = new fetch.Headers();
+      // myHeaders.append("Authorization", token);
+      // const setting = {
+      //   method: 'GET',
+      //   // headers: myHeaders,
+      //   redirect: 'follow',
+      // };
+      // const response = await fetch(`http://localhost:3000/detaillapHarian/${rLap.rows[0].id}`, setting);
+      // const data = await response.json();
+      // console.log('ini datanyaa', data.data);
+      console.log('ini id', rLap.rows[0].id);
+      const data = await fetchData(rLap.rows[0].id);
+      console.log('dataa', data);
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      const content = await compilehtml(data);
+      await page.setContent(content);
+      const pdfPath = path.join(process.cwd(), 'resources\\', `${pdfName}`);
+      await page.pdf({
+        path: pdfPath,
+        format: 'A4',
+        printBackground: true,
+      });
+
+      console.log('success');
+      await browser.close();
+    } catch (e) {
+      throw new InvariantError(e);
+    }
+
     return res.status(201).send({
       status: 'success',
       message: 'laporan has been created successfully',

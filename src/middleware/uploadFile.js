@@ -6,7 +6,7 @@ const fileStorageEngine = multer.diskStorage({
     cb(null, path.join(__dirname, '..', '..', 'resources'));
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-Lap-${file.originalname}}`);
+    cb(null, `${Date.now()}-Lap-${file.originalname}`);
   },
 });
 

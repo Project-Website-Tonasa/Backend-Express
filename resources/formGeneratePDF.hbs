@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .responstable {
+        margin: 1em 0;
+        width: 100%;
+        overflow: hidden;
+        background: #FFF;
+        border: 2px solid #000000;
+        border-spacing: 0px;
+        font-size: 10px;
+        }
+        .responstable tr {
+        border: 1px solid #000000;
+        }
+        .responstable tr:nth-child(odd) {
+        background-color: #ffffff;
+        }
+        .responstable th {
+        display: none;
+        border: 2px solid #000000;
+        background-color: #ffffff;
+        color: #000000;
+        padding: 1em;
+        }
+        .responstable th:first-child {
+        display: table-cell;
+        text-align: center;
+        }
+        .responstable th:nth-child(2) {
+        display: table-cell;
+        text-align: center;
+        }
+        .responstable th:nth-child(2) span {
+        display: none;
+        }
+        .responstable th:nth-child(2):after {
+        content: attr(data-th);
+        }
+        @media (min-width: 480px) {
+        .responstable th:nth-child(2) span {
+            display: block;
+        }
+        .responstable th:nth-child(2):after {
+            display: none;
+        }
+        }
+        .responstable td {
+        display: block;
+        word-wrap: break-word;
+        /* max-width: 7em; */
+        }
+        .responstable td:first-child {
+        display: table-cell;
+        text-align: center;
+        }
+        @media (min-width: 480px) {
+        .responstable td {
+            border: 2px solid #000000;
+        }
+        }
+        .responstable th, .responstable td {
+        text-align: left;
+        margin: .5em 1em;
+        }
+        @media (min-width: 480px) {
+        .responstable th, .responstable td {
+            display: table-cell;
+            padding: .1em;
+        }
+        }
+
+        body {
+        padding: 0 2em;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #000000;
+        background: #ffffff;
+        margin-top: 4em;
+        font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <table class="responstable">
+
+        <tr >
+            <th colspan="6"> <img src="https://imageup.me/images/2c1f58cc-78cf-45ab-b115-e9caeb75c1ff.png" width="190px"></th>
+            <th colspan="5"></th>
+        </tr>
+        
+        <tr>
+            <td colspan="11">LAPORAN HARIAN</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="text-align: left; border-right: 0px; border-bottom: 0px;">PEKERJAAN</td>
+            <td colspan="9" style="border-bottom: 0px; border-left: 0px;">: {{pekerjaan}}</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: left; border-right: 0px; border-bottom: 0px; border-top: 0px;">ALAMAT</td>
+            <td colspan="9" style="border-top: 0px; border-bottom: 0px; border-left: 0px;">:</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: left; border-right: 0px; border-bottom: 0px; border-top: 0px;">OWNER</td>
+            <td colspan="9" style="border-top: 0px; border-bottom: 0px; border-left: 0px;">:</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: left; border-right: 0px; border-bottom: 0px; border-top: 0px;">VENDOR</td>
+            <td colspan="9" style="border-top: 0px; border-bottom: 0px; border-left: 0px;">: {{vendor}}</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: left; border-right: 0px; border-top: 0px;">TANGGAL</td>
+            <td colspan="9" style="border-top: 0px; border-left: 0px;">: {{tanggal}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="11">DESKRIPSI</td>
+        </tr>
+        
+        <tr>
+            <td colspan="2" style="border-right: 1px;">NO.</td>
+            <td colspan="6" style="text-align: center;">AKTIVITAS HARI INI</td>
+            <td colspan="3" style="text-align: center;">TENAGA KERJA</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">1</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[0]}}</td>
+            <td style="text-align: center;">A.</td>
+            <td style="text-align: center;">JABATAN</td>
+            <td style="text-align: center;">JUMLAH</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;" >2</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[1]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">1</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_tdy.[0]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_tdy.[0]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">3</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[2]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">2</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_tdy.[1]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_tdy.[1]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">4</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[3]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">3</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_tdy.[2]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_tdy.[2]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">5</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[4]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">4</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_tdy.[3]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_tdy.[3]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">6</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[5]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">5</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_tdy.[4]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_tdy.[4]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">7</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[6]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">6</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_tdy.[5]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_tdy.[5]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">8</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[7]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">7</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_tdy.[6]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_tdy.[6]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">9</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{aktivitas.[8]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">8</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_tdy.[7]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_tdy.[7]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="font-weight: normal;">10</td>
+            <td colspan="6" style="text-align: center;">{{aktivitas.[9]}}</td>
+            <td style="text-align: center; font-weight: normal;">9</td>
+            <td style="text-align: center;">{{jabatan_tdy.[8]}}</td>
+            <td style="text-align: center;">{{qty_tdy.[8]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-right: 1px;">NO.</td>
+            <td colspan="6" style="text-align: center;">RENCANA KERJA BESOK</td>
+            <td colspan="3" style="text-align: center;">TENAGA KERJA</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">1</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[0]}}</td>
+            <td style="text-align: center;">B.</td>
+            <td style="text-align: center;">JABATAN</td>
+            <td style="text-align: center;">JUMLAH</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">2</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[1]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">1</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_bsk.[0]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_bsk.[0]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">3</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[2]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">2</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_bsk.[1]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_bsk.[1]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">4</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[3]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">3</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_bsk.[2]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_bsk.[2]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">5</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[4]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">4</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_bsk.[3]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_bsk.[3]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">6</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[5]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">5</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_bsk.[4]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_bsk.[4]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">7</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[6]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">6</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_bsk.[5]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_bsk.[5]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">8</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[7]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">7</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_bsk.[6]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_bsk.[6]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px; font-weight: normal;">9</td>
+            <td colspan="6" style="text-align: center; border-bottom: 1px;">{{rencana.[8]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">8</td>
+            <td style="text-align: center; border-bottom: 1px;">{{jabatan_bsk.[7]}}</td>
+            <td style="text-align: center; border-bottom: 1px;">{{qty_bsk.[7]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="font-weight: normal;">10</td>
+            <td colspan="6" style="text-align: center;">{{rencana.[9]}}</td>
+            <td style="text-align: center; font-weight: normal;">9</td>
+            <td style="text-align: center;">{{jabatan_bsk.[8]}}</td>
+            <td style="text-align: center;">{{qty_bsk.[8]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="8" style="text-align: center;"> LAPORAN KONDISI CUACA</td>
+            <td colspan="2" style="text-align: center;"> PERALATAN KERJA</td>
+            <td style="text-align: center;">QTY</td>
+        </tr>
+
+        <tr>
+            <td colspan="2">BAIK</td>
+            <td colspan="2" style="text-align: center;">MENDUNG</td>
+            <td colspan="2" style="text-align: center;">HUJAN INTENS TINGGI</td>
+            <td colspan="2" style="text-align: center;">HUJAN INTENS RENDAH</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">1</td>
+            <td style="border-bottom: 1px;">{{alat.[0]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[0]}}</td>
+        </tr>
+
+        <tr>
+            <td style="text-align: left; border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{baik.[0]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{mendung.[0]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{hujan_tinggi.[0]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{hujan_rendah.[0]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">2</td>
+            <td style="border-bottom: 1px;">{{alat.[1]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[1]}}</td>
+        </tr>
+
+        <tr>
+            <td style="border-right: 0px; border-bottom: 1px; border-right: none; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{baik.[1]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{mendung.[1]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{hujan_tinggi.[1]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{hujan_rendah.[1]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">3</td>
+            <td style="border-bottom: 1px;">{{alat.[2]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[2]}}</td>
+        </tr>
+
+        <tr>
+            <td style="border-right: 0px; border-bottom: 1px; border-right: none; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{baik.[2]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{mendung.[2]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{hujan_tinggi.[2]}}</td>
+            <td style="border-right: 0px; border-bottom: 1px; font-weight: normal;">HOURS:</td>
+            <td style="border-left: 0px; border-bottom: 1px;">{{hujan_rendah.[2]}}</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">4</td>
+            <td style="border-bottom: 1px;">{{alat.[3]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[3]}}</td>
+        </tr>
+
+        <tr>
+            <td style="width: 6%; border-right: 0;"></td>
+            <td style="border-left: 0;"></td>
+            <td style="width: 6%; border-right: 0;"></td>
+            <td style="border-left: 0;"></td>
+            <td style="width: 6%; border-right: 0;"></td>
+            <td style="border-left: 0;"></td>
+            <td style="width: 6%; border-right: 0;"></td>
+            <td style="border-left: 0;"></td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">5</td>
+            <td style="border-bottom: 1px;">{{alat.[4]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[4]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="6">MAN HOURS</td>
+            <td rowspan="2" colspan="2" style="text-align: center;">NOTE</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">6</td>
+            <td style="border-bottom: 1px;">{{alat.[5]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[5]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2">LAST DAY MAN HOURS</td>
+            <td colspan="2" style="text-align: center;">TODAY MAN HOURS</td>
+            <td colspan="2" style="text-align: center;">ACCUMULATIVE MAN HOURS</td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">7</td>
+            <td style="border-bottom: 1px;">{{alat.[6]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[6]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px;"></td>
+            <td colspan="2" style="border-bottom: 1px; border-left: none; border-right: none;"></td>
+            <td colspan="2" style="border-bottom: 1px;"></td>
+            <td colspan="2" style="border-bottom: 1px;"></td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">8</td>
+            <td style="border-bottom: 1px;">{{alat.[7]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[7]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2" style="border-bottom: 1px;"></td>
+            <td colspan="2" style="border-bottom: 1px; border-left: none; border-right: none;"></td>
+            <td colspan="2" style="border-bottom: 1px;"></td>
+            <td colspan="2" style="border-bottom: 1px;"></td>
+            <td style="text-align: center; border-bottom: 1px; font-weight: normal;">9</td>
+            <td style="border-bottom: 1px;">{{alat.[8]}}</td>
+            <td style="border-bottom: 1px;">{{qty_alat.[8]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="2"></td>
+            <td colspan="2" style="border-left: none; border-right: none;"></td>
+            <td colspan="2"></td>
+            <td colspan="2"></td>
+            <td style="text-align: center; font-weight: normal;">10</td>
+            <td>{{alat.[9]}}</td>
+            <td>{{qty_alat.[9]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="6">PERMASALAHAN</td>
+            <td colspan="5" style="text-align: center;">SOLUSI</td>
+        </tr>
+
+        <tr>
+            <td colspan="6" style="border-bottom: 1px;">&nbsp;{{masalah.[0]}}</td>
+            <td colspan="5" style="border-bottom: 1px;">{{solusi.[0]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="6" style="border-bottom: 1px;">&nbsp;{{masalah.[1]}}</td>
+            <td colspan="5" style="border-bottom: 1px;">{{solusi.[1]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="6" style="border-bottom: 1px;">&nbsp;{{masalah.[2]}}</td>
+            <td colspan="5" style="border-bottom: 1px;">{{solusi.[2]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="6" style="border-bottom: 1px;">&nbsp;{{masalah.[3]}}</td>
+            <td colspan="5" style="border-bottom: 1px;">{{solusi.[3]}}</td>
+        </tr>
+
+        <tr>
+            <td colspan="6">&nbsp;{{masalah.[4]}}</td>
+            <td colspan="5">{{solusi.[4]}}</td>
+        </tr>
+    </table>
+    <table style="width: 100%; margin-top: 5em; margin-bottom: 5em; font-weight: bold; font-size: 10px;">
+        <tr>
+            <td style="width: 80%;">PREPARED & CHECKED BY</td>
+            <td style="width: 20%;">ACKNOWLEDGE & APPROVED</td>
+        </tr>
+        <tr>
+            <td style="width: 80%;">{{vendor}}</td>
+            <td style="width: 20%;">PT SEMEN TONASA</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+        </tr>   
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+        </tr>     
+        <tr>
+            <td style="width: 80%;">........................................................</td>
+            <td style="width: 20%;">..............................................</td>
+        </tr>
+        <tr>
+            <td style="width: 80%;">PENGAWAS LAPANGAN</td>
+            <td style="width: 20%;">PENGAWAS LAPANGAN</td>
+        </tr>
+    </table>
+</body>
+</html>

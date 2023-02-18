@@ -1,5 +1,13 @@
 const pool = require('../config/db');
 
+const resPo = (data) => {
+  const objData = data.map((obj) => (!obj.catatan_bast1 ? {
+    ...obj,
+    catatan_bast1: '-',
+  } : obj));
+  return objData;
+};
+
 const getProyekByIdKontraktor = async (req, res) => {
   try {
     const { idUser } = req.params;
@@ -30,10 +38,10 @@ const getProyekByIdKontraktor = async (req, res) => {
       });
     }
     result = await pool.query(`SELECT * FROM (${qFilter})sub ORDER BY LOWER(no_proyek) ASC;`);
-
+    const data = resPo(result.rows);
     return res.status(200).send({
       status: 'success',
-      data: result.rows,
+      data,
     });
   } catch (e) {
     return res.status(500).send({
@@ -72,9 +80,10 @@ const getAllProyek = async (req, res) => {
       });
     }
     result = await pool.query(`SELECT * FROM (${qFilter})sub ORDER BY LOWER(no_proyek) ASC;`);
+    const data = resPo(result.rows);
     return res.status(200).send({
       status: 'success',
-      data: result.rows,
+      data,
     });
   } catch (e) {
     return res.status(500).send({
@@ -92,9 +101,10 @@ const getProyekByNoProyek = async (req, res) => {
       values: [noProyek],
     };
     const result = await pool.query(query);
+    const data = resPo(result.rows);
     return res.status(200).send({
       status: 'success',
-      data: result.rows,
+      data,
     });
   } catch (e) {
     return res.status(500).send({
