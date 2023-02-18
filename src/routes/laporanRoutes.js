@@ -11,6 +11,7 @@ router.post('/laporan/tambah', uploadFile.upload.single('file'), laporanHandler.
 router.post('/lapHarian/tambah', laporanHandler.createLapHarian);
 router.get('/detailLaporan/:id', laporanHandler.getLaporanDetail);
 router.get('/detaillapHarian/:id', laporanHandler.getDetailLapHarian);
+router.put('/detaillapHarian/:id', laporanHandler.editDetailLapHarian);
 router.put('/laporan/edit/:id', uploadFile.upload.single('file'), laporanHandler.updateLaporan);
 
 // STAFF OR ADMIN FEATURE
