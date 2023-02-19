@@ -68,6 +68,9 @@ const createLaporan = async (req, res) => {
       idUser,
     } = req.body;
 
+    if (!namaFile || !jenisLaporan || !noProyek) {
+      throw new InvariantError('Semua field wajib diisi!');
+    }
     if (jenisLaporan === 'Laporan Mingguan' || jenisLaporan === 'Laporan Bulanan') {
       if (!urutanLap) {
         throw new InvariantError('urutan laporan wajib diisi');
@@ -191,12 +194,11 @@ const getLaporanDetail = async (req, res) => {
 const updateLaporan = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      jenisLaporan,
-      urutanLap,
-    } = req.body;
     const namaFile = req.file.filename;
 
+    if (!namaFile) {
+      throw new InvariantError('File harus diisi');
+    }
     const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
 
     const qFile = {
@@ -213,7 +215,7 @@ const updateLaporan = async (req, res) => {
     }
 
     const query = {
-      text: `UPDATE laporan SET jenis_laporan = '${jenisLaporan}', urutan_lap = '${urutanLap}', file = '${namaFile}', status = 'Ditinjau' WHERE id = ${id} RETURNING *`,
+      text: `UPDATE laporan SET file = '${namaFile}', status = 'Ditinjau' WHERE id = ${id} RETURNING *`,
     };
     await pool.query(query);
     fs.unlink(directoryPath + resFile.rows[0].file, (err) => {
@@ -405,6 +407,7 @@ const updateBastStatus = async (req, res) => {
         data: {
           statusBast: result.rows[0].status_bast1,
           urlFormBast: 'ini link download bast',
+          catatanBast: result.rows[0].catatan_bast,
         },
       });
     } else {
@@ -413,6 +416,7 @@ const updateBastStatus = async (req, res) => {
         data: {
           statusBast: result.rows[0].status_bast1,
           urlFormBast: null,
+          catatanBast: result.rows[0].catatan_bast,
         },
       });
     }
