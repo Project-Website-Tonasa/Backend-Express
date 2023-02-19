@@ -678,11 +678,21 @@ const getDetailLapHarian = async (req, res) => {
     const { id } = req.params;
 
     const queryGetInfoLH = {
-      text: 'SELECT d.id_datum, d.nm_proyek as pekerjaan, d.nm_rekanan as vendor, DATE(lh.tgl) as tanggal FROM data as d INNER JOIN laporan as l ON l.id_datum = d.id_datum INNER JOIN lap_harian as lh ON lh.id_laporan = l.id WHERE l.id = $1;',
+      text: 'SELECT d.id_datum, d.nm_proyek as pekerjaan, d.nm_rekanan as vendor, lh.tgl as tanggal FROM data as d INNER JOIN laporan as l ON l.id_datum = d.id_datum INNER JOIN lap_harian as lh ON lh.id_laporan = l.id WHERE l.id = $1;',
       values: [id],
     };
     const poolInfoLH = await pool.query(queryGetInfoLH);
     let infoLH = poolInfoLH.rows[0];
+
+    infoLH.tanggal = (infoLH.tanggal).toLocaleString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    if (!infoLH) {
+      throw new NotFoundError(`Tidak ada data laporan harian dengan id laporan : ${id}`);
+    }
 
     const queryGetDescLH = {
       text: 'SELECT lh.id as id_lapharian, lh.aktivitas as aktivitas, lh.rencana as rencana, lh.note as note FROM lap_harian as lh INNER JOIN laporan as l ON l.id = lh.id_laporan WHERE l.id = $1 ORDER BY lh.id',
@@ -729,6 +739,12 @@ const getDetailLapHarian = async (req, res) => {
     };
     const poolCuaca = await pool.query(queryGetCuaca);
 
+    const queryGetManHours = {
+      text: 'SELECT ARRAY_AGG(id) as id_mh, ARRAY_AGG(last_day) as mh_lastday, ARRAY_AGG(today) as mh_today, ARRAY_AGG(acum) as mh_acum FROM (SELECT mh.id, mh.last_day, mh.today, mh.acum FROM man_hours as mh INNER JOIN lap_harian as lh ON mh.id_lap_harian = lh.id INNER JOIN laporan as l ON l.id = lh.id_laporan WHERE l.id = $1 ORDER BY mh.id)sub;',
+      values: [id],
+    };
+    const poolManHours = await pool.query(queryGetManHours);
+
     // descLH.tkToday = poolTenaKer.rows;
     // descLH.tkTomorrow = poolTenaKerB.rows;
     // descLH.alatKerja = poolAlatKerja.rows;
@@ -745,7 +761,12 @@ const getDetailLapHarian = async (req, res) => {
       ...poolAlatKerja.rows[0],
       ...poolNote.rows[0],
       ...poolCuaca.rows[0],
+      ...poolManHours.rows[0],
     };
+
+    Object.keys(infoLH).forEach((key) => {
+      if (infoLH[key] == null) { infoLH[key] = ''; }
+    });
 
     // return res.status(200).send({
     //   status: 'success',
@@ -780,22 +801,22 @@ const editDetailLapHarian = async (req, res) => {
       tgl,
       aktivitas, rencana, note, jabatanhrini, jmlhhrini,
       jabatanbsk, jmlhbsk, baik, mendung, hujanTinggi, hujanRendah, alat, qty, masalah, solusi,
+      mhToday, mhLstDay,
     } = req.body;
 
     // Validate the body request
     // eslint-disable-next-line max-len
-    if (!aktivitas || !rencana || !jabatanhrini || !jmlhhrini || !alat || !qty || !jabatanbsk || !jmlhbsk) {
-      throw new InvariantError('Aktivitas or Rencana or Jabatan or jumlah or Alat or qty wajib diisi!');
+    if (!aktivitas || !rencana || !jabatanhrini || !jmlhhrini || !alat || !qty || !jabatanbsk || !jmlhbsk || !mhToday || !mhLstDay) {
+      throw new InvariantError('Pastikan setiap field telah diisi!');
     }
 
-    console.log(!Array.isArray(aktivitas));
     // eslint-disable-next-line max-len
-    if (!Array.isArray(aktivitas) || !Array.isArray(rencana) || !Array.isArray(baik) || !Array.isArray(mendung) || !Array.isArray(hujanTinggi) || !Array.isArray(hujanRendah) || !Array.isArray(jabatanhrini) || !Array.isArray(jmlhhrini) || !Array.isArray(jabatanbsk) || !Array.isArray(jmlhbsk) || !Array.isArray(alat) || !Array.isArray(qty) || !Array.isArray(masalah) || !Array.isArray(solusi)) {
+    if (!Array.isArray(aktivitas) || !Array.isArray(rencana) || !Array.isArray(note) || !Array.isArray(baik) || !Array.isArray(mendung) || !Array.isArray(hujanTinggi) || !Array.isArray(hujanRendah) || !Array.isArray(jabatanhrini) || !Array.isArray(jmlhhrini) || !Array.isArray(jabatanbsk) || !Array.isArray(jmlhbsk) || !Array.isArray(alat) || !Array.isArray(qty) || !Array.isArray(masalah) || !Array.isArray(solusi) || !Array.isArray(mhToday) || !Array.isArray(mhLstDay)) {
       throw new InvariantError('Pastikan semua tipe data tiap field sudah benar');
     }
 
     // eslint-disable-next-line max-len
-    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length) {
+    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length) {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
     const qGetLap = {
@@ -875,12 +896,28 @@ const editDetailLapHarian = async (req, res) => {
       pNote.push(pool.query(qNote));
     }
 
+    const pMh = [];
+    let qMh;
+    for (let i = 0; i < mhToday.length; i += 1) {
+      qMh = {
+        text: 'INSERT INTO man_hours (id, last_day, today, acum, id_lap_harian) VALUES (DEFAULT, $1, $2, $3, $4)',
+        values: [
+          mhLstDay[i],
+          mhToday[i],
+          mhLstDay[i] + mhToday[i],
+          poolLapHar.rows[0].id,
+        ],
+      };
+      pMh.push(pool.query(qMh));
+    }
+
     try {
       await Promise.all(ptenKerjaHrIni);
       await Promise.all(ptenKerjaBsk);
       await pool.query(qkondCuaca);
       await Promise.all(pAlatKerja);
       await Promise.all(pNote);
+      await Promise.all(pMh);
     } catch (e) {
       throw new InvariantError(e);
     }
