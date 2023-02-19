@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 
 const resPo = (data) => {
-  const objData = data.map((obj) => (!obj.catatan_bast1 ? {
+  const objData = data.map((obj) => (!obj.catatan_bast ? {
     ...obj,
     catatan_bast: '-',
   } : obj));
