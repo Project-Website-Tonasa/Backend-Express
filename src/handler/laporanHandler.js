@@ -794,7 +794,11 @@ const editDetailLapHarian = async (req, res) => {
     if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length) {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
-
+    const qGetLap = {
+      text: 'SELECT l.file, d.no_proyek FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum WHERE l.id = $1',
+      values: [id],
+    };
+    const rGetLap = await pool.query(qGetLap);
     // Deleting Previous data
     const qDelLaphar = {
       text: 'DELETE FROM lap_harian WHERE id_laporan = $1;',
@@ -808,9 +812,10 @@ const editDetailLapHarian = async (req, res) => {
     const status = tglLap < currDate ? 'Tepat Waktu' : 'Terlambat';
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
+    const pdfName = `${Date.now()}-lap-${rGetLap.rows[0].no_proyek}-harian.pdf`;
     const qUpdateLap = {
-      text: 'UPDATE laporan SET created_at = $1 WHERE id = $2 RETURNING *',
-      values: [createdAt, id],
+      text: 'UPDATE laporan SET created_at= $1, file = $2 WHERE id = $3 RETURNING *',
+      values: [createdAt, pdfName, id],
     };
     // const poolLap = await pool.query(qUpdateLap);
     await pool.query(qUpdateLap);
@@ -872,6 +877,44 @@ const editDetailLapHarian = async (req, res) => {
       await pool.query(qkondCuaca);
       await Promise.all(pAlatKerja);
       await Promise.all(pNote);
+    } catch (e) {
+      throw new InvariantError(e);
+    }
+    const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
+    fs.unlink(directoryPath + rGetLap.rows[0].file, (err) => {
+      if (err) {
+        throw new NotFoundError('File tidak ditemukan');
+      }
+      console.log('deleted');
+    });
+    try {
+      // const myHeaders = new fetch.Headers();
+      // myHeaders.append("Authorization", token);
+      // const setting = {
+      //   method: 'GET',
+      //   // headers: myHeaders,
+      //   redirect: 'follow',
+      // };
+      // const response = await fetch(`http://localhost:3000/detaillapHarian/${rLap.rows[0].id}`, setting);
+      // const data = await response.json();
+      // console.log('ini datanyaa', data.data);
+      console.log('ini id', id);
+      const data = await fetchData(id);
+      console.log('dataa', data);
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      const content = await compilehtml(data);
+      await page.setContent(content);
+      const pdfPath = path.join(process.cwd(), 'resources\\', `${pdfName}`);
+      await page.pdf({
+        path: pdfPath,
+        format: 'A4',
+        printBackground: true,
+      });
+
+      console.log('success');
+      await browser.close();
     } catch (e) {
       throw new InvariantError(e);
     }
