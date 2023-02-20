@@ -7,27 +7,20 @@ const addPlan = async (req, res) => {
   try {
     const { idDatum, arrPlan } = req.body;
 
-    if (typeof (arrPlan) !== 'object') {
-      throw new InvariantError('Masukkan array arrPlan dengan benar!');
+    if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
+      throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
     }
-    const arrPlanStr = `[${arrPlan}]`;
+
+    if (!Array.isArray(arrPlan)) {
+      throw new InvariantError('Masukkan array arrPlan dengan benar! Pastikan bertipe array (bukan string)');
+    }
 
     const queryInsert = {
       text: 'INSERT INTO plan (datum_id, arr_value) VALUES ($1, $2) RETURNING *;',
-      values: [
-        idDatum, arrPlanStr,
-      ],
+      values: [idDatum, arrPlan],
     };
 
-    let poolRes;
-
-    try {
-      poolRes = await pool.query(queryInsert);
-      // poolRes.rows[0] = resBeautifier(poolRes.rows[0]);
-    } catch (e) {
-      throw new InvariantError(e);
-    }
-
+    const poolRes = await pool.query(queryInsert);
     return res.status(201).send({
       status: 'success',
       message: 'Berhasil menambahkan data baru',
@@ -35,10 +28,29 @@ const addPlan = async (req, res) => {
     });
   } catch (e) {
     console.error(e);
+
     if (e instanceof ClientError) {
       return res.status(400).send({
         status: 'fail',
         message: e.message,
+      });
+    }
+    if ((e.message).includes('duplicate key')) {
+      return res.status(400).send({
+        status: 'fail',
+        message: 'Duplikat id datum. Data proyek ini sudah memiliki plan',
+      });
+    }
+    if ((e.message).includes('foreign key constraint')) {
+      return res.status(400).send({
+        status: 'fail',
+        message: 'Id proyek tidak terdaftar pada data proyek manapun',
+      });
+    }
+    if ((e.message).includes('invalid input syntax for type double precision')) {
+      return res.status(400).send({
+        status: 'fail',
+        message: 'Pastikan arrplan merupakan array yang setiap elemennya hanya berisi angka',
       });
     }
     return res.status(500).send({
@@ -49,41 +61,12 @@ const addPlan = async (req, res) => {
 };
 
 const getPlan = async (req, res) => {
-  const queryGet = {
-    text: 'SELECT * FROM plan order by id_plan',
-  };
-  const dataRes = await pool.query(queryGet);
-  const data = dataRes.rows;
-
-  for (let i = 0; i < data.length; i += 1) {
-    if (data[i].arr_value) {
-      data[i].arr_value = JSON.parse(data[i].arr_value);
-    }
-  }
-
-  return res.status(200).send({
-    status: 'success',
-    data,
-  });
-};
-
-const getPlanDetail = async (req, res) => {
   try {
-    const { idDatum } = req.params;
     const queryGet = {
-      text: 'SELECT * FROM plan WHERE datum_id = $1 order by id_plan',
-      values: [idDatum],
+      text: 'SELECT * FROM plan order by id_plan',
     };
     const dataRes = await pool.query(queryGet);
     const data = dataRes.rows;
-
-    if (!(data.length)) {
-      throw new InvariantError('Tidak ada data plan pada proyek tersebut');
-    }
-
-    if (data[0].arr_value) {
-      data[0].arr_value = JSON.parse(data[0].arr_value);
-    }
 
     return res.status(200).send({
       status: 'success',
@@ -91,6 +74,39 @@ const getPlanDetail = async (req, res) => {
     });
   } catch (e) {
     console.error(e);
+    return res.status(500).send({
+      status: 'error',
+      message: 'Gagal mengambil data',
+    });
+  }
+};
+
+const getPlanDetail = async (req, res) => {
+  try {
+    const { idDatum } = req.params;
+
+    if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
+      throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
+    }
+
+    const queryGet = {
+      text: 'SELECT * FROM plan WHERE datum_id = $1 order by id_plan',
+      values: [idDatum],
+    };
+    const dataRes = await pool.query(queryGet);
+
+    if (!((dataRes.rows).length)) {
+      throw new NotFoundError('Tidak ada data plan pada proyek tersebut');
+    }
+    const data = dataRes.rows[0];
+
+    return res.status(200).send({
+      status: 'success',
+      data,
+    });
+  } catch (e) {
+    console.error(e);
+
     if (e instanceof ClientError) {
       return res.status(400).send({
         status: 'fail',
@@ -99,7 +115,7 @@ const getPlanDetail = async (req, res) => {
     }
     return res.status(500).send({
       status: 'error',
-      message: 'Gagal menambahkan data',
+      message: 'Gagal mengambil data',
     });
   }
 };
@@ -109,22 +125,25 @@ const editPlanDetail = async (req, res) => {
     const { idDatum } = req.params;
     const { arrPlan } = req.body;
 
-    if (typeof (arrPlan) !== 'object') {
+    // if (Number.isNaN(Number(idDatum))) {
+    //   throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
+    // }
+    if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
+      throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
+    }
+
+    if (!Array.isArray(arrPlan)) {
       throw new InvariantError('Masukkan array arrPlan dengan benar!');
     }
-    const arrPlanStr = `[${arrPlan}]`;
 
     const queryUpdate = {
       text: 'UPDATE plan SET arr_value = $1 WHERE datum_id = $2 RETURNING *;',
-      values: [arrPlanStr, idDatum],
+      values: [arrPlan, idDatum],
     };
 
-    let poolRes;
-
-    try {
-      poolRes = await pool.query(queryUpdate);
-    } catch (e) {
-      throw new InvariantError(e);
+    const poolRes = await pool.query(queryUpdate);
+    if (!((poolRes.rows).length)) {
+      throw new NotFoundError('Data plan tidak terdaftar');
     }
 
     return res.status(201).send({
@@ -140,6 +159,14 @@ const editPlanDetail = async (req, res) => {
         message: e.message,
       });
     }
+
+    if ((e.message).includes('invalid input syntax for type double precision')) {
+      return res.status(400).send({
+        status: 'fail',
+        message: 'Pastikan arrplan merupakan array yang setiap elemennya hanya berisi angka',
+      });
+    }
+
     return res.status(500).send({
       status: 'error',
       message: 'Gagal menambahkan data',
@@ -167,7 +194,7 @@ const deletePlan = async (req, res) => {
 
     return res.status(200).send({
       status: 'success',
-      message: `Data proyek ${poolDel.rows[0].datum_id} berhasil dihapus`,
+      message: `Data plan ${poolDel.rows[0].datum_id} berhasil dihapus`,
     });
   } catch (e) {
     console.error(e);
@@ -189,38 +216,37 @@ const addActual = async (req, res) => {
   try {
     const { idDatum, arrActual } = req.body;
 
-    if (typeof (arrActual) !== 'object') {
-      throw new InvariantError('Masukkan array arrActual dengan benar!');
+    if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
+      throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
     }
-    const arrActualStr = `[${arrActual}]`;
 
-    const queryInsert = {
-      text: 'INSERT INTO real (datum_id, arr_value) VALUES ($1, $2) RETURNING *;',
-      values: [idDatum, arrActualStr],
-    };
-    const queryUpdate = {
-      text: 'UPDATE real SET arr_value = $1 WHERE datum_id = $2 RETURNING *;',
-      values: [arrActualStr, idDatum],
-    };
+    if (!Array.isArray(arrActual)) {
+      throw new InvariantError('Masukkan array arrActual dengan benar! Pastikan bertipe array (bukan string)');
+    }
 
     let poolRes;
 
-    try {
-      const queryGetCheck = {
-        text: 'SELECT * FROM real WHERE datum_id = $1',
-        values: [idDatum],
-      };
-      const poolGet = await pool.query(queryGetCheck);
+    const queryInsert = {
+      text: 'INSERT INTO real (datum_id, arr_value) VALUES ($1, $2) RETURNING *;',
+      values: [idDatum, arrActual],
+    };
 
-      if (!poolGet.rows[0]) {
-        poolRes = await pool.query(queryInsert);
-      } else {
-        poolRes = await pool.query(queryUpdate);
-      }
-    } catch (e) {
-      throw new InvariantError(e);
+    const queryUpdate = {
+      text: 'UPDATE real SET arr_value = $1 WHERE datum_id = $2 RETURNING *;',
+      values: [arrActual, idDatum],
+    };
+
+    const queryGetCheck = {
+      text: 'SELECT * FROM real WHERE datum_id = $1',
+      values: [idDatum],
+    };
+    const poolGet = await pool.query(queryGetCheck);
+
+    if (!poolGet.rows[0]) {
+      poolRes = await pool.query(queryInsert);
+    } else {
+      poolRes = await pool.query(queryUpdate);
     }
-
     return res.status(201).send({
       status: 'success',
       message: 'Berhasil menambahkan data baru',
@@ -234,6 +260,14 @@ const addActual = async (req, res) => {
         message: e.message,
       });
     }
+
+    if ((e.message).includes('violates foreign key constraint')) {
+      return res.status(404).send({
+        status: 'fail',
+        message: 'Tidak dapat memasukkan array actual. Tidak ada data proyek dengan id tersebut',
+      });
+    }
+
     return res.status(500).send({
       status: 'error',
       message: 'Gagal menambahkan data',
@@ -242,42 +276,43 @@ const addActual = async (req, res) => {
 };
 
 const getActual = async (req, res) => {
-  const queryGet = {
-    text: 'SELECT * FROM real order by id_real',
-  };
-  const dataRes = await pool.query(queryGet);
-  const data = dataRes.rows;
+  try {
+    const queryGet = {
+      text: 'SELECT * FROM real order by id_real',
+    };
+    const dataRes = await pool.query(queryGet);
+    const data = dataRes.rows;
 
-  for (let i = 0; i < data.length; i += 1) {
-    if (data[i].arr_value) {
-      data[i].arr_value = JSON.parse(data[i].arr_value);
-    }
+    return res.status(200).send({
+      status: 'success',
+      data,
+    });
+  } catch (e) {
+    return res.status(500).send({
+      status: 'error',
+      message: 'Gagal mengambil data',
+    });
   }
-
-  return res.status(200).send({
-    status: 'success',
-    data,
-  });
 };
 
 const getActualDetail = async (req, res) => {
   try {
     const { idDatum } = req.params;
 
+    if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
+      throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
+    }
+
     const queryGet = {
       text: 'SELECT * FROM real WHERE datum_id = $1 order by id_real',
       values: [idDatum],
     };
     const dataRes = await pool.query(queryGet);
-    const data = dataRes.rows;
-    console.log(data);
 
-    if (!(data.length)) {
-      throw new InvariantError('Tidak ada data actual pada proyek tersebut');
+    if (!((dataRes.rows).length)) {
+      throw new NotFoundError('Tidak ada data actual pada proyek tersebut');
     }
-    if (data[0].arr_value) {
-      data[0].arr_value = JSON.parse(data[0].arr_value);
-    }
+    const data = dataRes.rows[0];
 
     return res.status(200).send({
       status: 'success',
@@ -293,7 +328,7 @@ const getActualDetail = async (req, res) => {
     }
     return res.status(500).send({
       status: 'error',
-      message: 'Gagal menambahkan data',
+      message: 'Gagal mengambil data',
     });
   }
 };
@@ -303,22 +338,22 @@ const editActualDetail = async (req, res) => {
     const { idDatum } = req.params;
     const { arrActual } = req.body;
 
-    if (typeof (arrActual) !== 'object') {
-      throw new InvariantError('Masukkan array arrActual dengan benar!');
+    if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
+      throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
     }
-    const arrActualStr = `[${arrActual}]`;
+
+    if (!Array.isArray(arrActual)) {
+      throw new InvariantError('Masukkan array arrPlan dengan benar!');
+    }
 
     const queryUpdate = {
       text: 'UPDATE real SET arr_value = $1 WHERE datum_id = $2 RETURNING *;',
-      values: [arrActualStr, idDatum],
+      values: [arrActual, idDatum],
     };
 
-    let poolRes;
-
-    try {
-      poolRes = await pool.query(queryUpdate);
-    } catch (e) {
-      throw new InvariantError(e);
+    const poolRes = await pool.query(queryUpdate);
+    if (!((poolRes.rows).length)) {
+      throw new NotFoundError('Data actual tidak terdaftar');
     }
 
     return res.status(201).send({
@@ -334,9 +369,17 @@ const editActualDetail = async (req, res) => {
         message: e.message,
       });
     }
+
+    if ((e.message).includes('invalid input syntax for type double precision')) {
+      return res.status(400).send({
+        status: 'fail',
+        message: 'Pastikan arrplan merupakan array yang setiap elemennya hanya berisi angka',
+      });
+    }
+
     return res.status(500).send({
       status: 'error',
-      message: 'Gagal menambahkan data',
+      message: 'Gagal mengedit data',
     });
   }
 };
@@ -387,14 +430,6 @@ const getPlanActual = async (req, res) => {
     const dataRes = await pool.query(queryGet);
     const data = dataRes.rows;
 
-    for (let i = 0; i < data.length; i += 1) {
-      if (data[i].arrplan) {
-        data[i].arrplan = JSON.parse(data[i].arrplan);
-      }
-      if (data[i].arractual) {
-        data[i].arractual = JSON.parse(data[i].arractual);
-      }
-    }
     return res.status(200).send({
       status: 'success',
       data,
@@ -409,7 +444,7 @@ const getPlanActual = async (req, res) => {
     }
     return res.status(500).send({
       status: 'error',
-      message: 'Gagal menambahkan data',
+      message: 'Gagal mengambil data',
     });
   }
 };

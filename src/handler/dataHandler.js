@@ -15,6 +15,7 @@ const resBeautifier = (data) => {
 
   dataobj.tgl_mulai = (dataobj.tgl_mulai).toLocaleString('id-ID', options);
   dataobj.tgl_akhir = (dataobj.tgl_akhir).toLocaleString('id-ID', options);
+  dataobj.edited_at = (dataobj.edited_at).toLocaleString('id-ID', options);
 
   dataobj.status_data = dataobj.status;
   delete dataobj.status;
@@ -27,6 +28,9 @@ const resBeautifier = (data) => {
   }
   if (dataobj.batas_retensi) {
     dataobj.batas_retensi = (dataobj.batas_retensi).toLocaleString('id-ID', options);
+  }
+  if (dataobj.nilai_tamb) {
+    dataobj.nilaiTamb_str = (Number(dataobj.nilai_tamb)).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
   }
 
   Object.keys(dataobj).forEach((key) => {
@@ -185,50 +189,70 @@ const getData = async (req, res) => {
 const addDatum = async (req, res) => {
   try {
     const {
-      nmJenis, tahun, noProyek, namaProyek, namaRekanan,
-      tglMulai, tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi, arrPlan,
+      tahun, noProyek, namaProyek, namaRekanan,
+      tglMulai, tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi, arrPlan, editedBy,
     } = req.body;
 
-    if (typeof (arrPlan) !== 'object') {
-      throw new InvariantError('Masukkan array arrPlan dengan benar!');
+    if (!Array.isArray(arrPlan)) {
+      throw new InvariantError('Masukkan array arrPlan dengan benar! Pastikan bertipe array (bukan string)');
     }
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan tahun dengan benar');
+    }
+
+    let nmJenis;
+
+    if (noProyek.includes('84', 0)) {
+      nmJenis = 'CAPEX';
+    } else if (noProyek.includes('86', 0)) {
+      nmJenis = 'OPEX';
+    } else if (noProyek.includes('100', 0)) {
+      nmJenis = 'FAKE';
+    } else {
+      throw new InvariantError('Nomor proyek harus diawali dengan 84 atau 86');
+    }
+
+    if (!Date.parse(tglMulai) || !Date.parse(tglAkhir)) {
+      throw new InvariantError('Invalid Date tglMulai atau tglAkhir');
+    }
+    if (Date.parse(tglMulai) > Date.parse(tglAkhir)) {
+      throw new InvariantError('tglMulai tidak boleh lebih duluan daripada tglAkhir');
+    }
+    if (!Number(nilai) || Array.isArray(nilai)) {
+      throw new InvariantError('Nilai harus berupa integer');
+    }
+
+    const editedAt = new Date(new Date().setHours(0, 0, 0, 0));
+
+    const queryGetUserName = {
+      text: 'SELECT nama, sap FROM admin_staff WHERE id = $1',
+      values: [editedBy],
+    };
+    const poolUserName = await pool.query(queryGetUserName);
+    const userName = ((poolUserName.rows[0].nama).concat(' - ', (poolUserName.rows[0].sap)));
 
     // Tambahkan validasi di siniii weh, untuk tiap tipe, kayak nm jenis, tahun, no proyek, dsb
     const queryInsert = {
-      text: 'INSERT INTO data (id_datum, nm_jenis, tahun, no_proyek, nm_proyek, nm_rekanan, tgl_mulai, tgl_akhir, nilai, nm_kota, nm_lokasi, keterangan, klasifikasi) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *;',
+      text: 'INSERT INTO data (id_datum, nm_jenis, tahun, no_proyek, nm_proyek, nm_rekanan, tgl_mulai, tgl_akhir, nilai, nm_kota, nm_lokasi, keterangan, klasifikasi, edited_by, edited_at) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *;',
       values: [
         nmJenis, tahun, noProyek, namaProyek, namaRekanan, tglMulai,
-        tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi,
+        tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi, userName, editedAt,
       ],
     };
 
-    let poolRes;
-
-    try {
-      poolRes = await pool.query(queryInsert);
-      poolRes.rows[0] = resBeautifier(poolRes.rows[0]);
-    } catch (e) {
-      throw new InvariantError(e);
-    }
-
-    const arrPlanStr = `[${arrPlan}]`;
+    const poolRes = await pool.query(queryInsert);
+    poolRes.rows[0] = resBeautifier(poolRes.rows[0]);
 
     const queryInsertPlan = {
       text: 'INSERT INTO plan (datum_id, arr_value) VALUES ($1, $2) RETURNING *;',
-      values: [
-        poolRes.rows[0].id_datum, arrPlanStr,
-      ],
+      values: [poolRes.rows[0].id_datum, arrPlan],
     };
 
-    try {
-      const poolResPlan = await pool.query(queryInsertPlan);
-      poolRes.rows[0].arrplan = poolResPlan.rows[0].arr_value;
-      if (poolRes.rows[0].arrplan) {
-        poolRes.rows[0].arrplan = JSON.parse(poolRes.rows[0].arrplan);
-      }
-    } catch (e) {
-      throw new InvariantError(e);
-    }
+    const poolResPlan = await pool.query(queryInsertPlan);
+    poolRes.rows[0].arrplan = poolResPlan.rows[0].arr_value;
+    // if (poolRes.rows[0].arrplan) {
+    //   poolRes.rows[0].arrplan = JSON.parse(poolRes.rows[0].arrplan);
+    // }
     const queryInsertActual = {
       text: 'INSERT INTO real (datum_id) VALUES ($1)',
       values: [poolRes.rows[0].id_datum],
@@ -249,6 +273,14 @@ const addDatum = async (req, res) => {
         message: e.message,
       });
     }
+
+    if ((e.message).includes('duplicate key')) {
+      return res.status(400).send({
+        status: 'fail',
+        message: 'Duplikat nomor proyek',
+      });
+    }
+
     return res.status(500).send({
       status: 'error',
       message: 'Gagal menambahkan data',
@@ -307,14 +339,15 @@ const editDatum = async (req, res) => {
 
     const {
       nmJenis, tahun, noProyek, namaProyek, namaRekanan, tglMulai, tglAkhir, nilai,
-      nmKota, nmLokasi, keterangan, tglSelesai, tglBast1, batasRetensi, klasifikasi,
+      nmKota, nmLokasi, keterangan, tglSelesai, tglBast1, batasRetensi, klasifikasi, nilaiTamb,
     } = req.body;
 
     const queryUpdate = {
-      text: 'UPDATE data SET nm_jenis = $1, tahun = $2, no_proyek = $3, nm_proyek = $4, nm_rekanan = $5, tgl_mulai = $6, tgl_akhir = $7, nilai = $8, nm_kota = $9, nm_lokasi = $10, keterangan = $11, tgl_selesai = $12, tgl_bast1 = $13, batas_retensi = $14, klasifikasi = $15 WHERE id_datum = $16 RETURNING *;',
+      text: 'UPDATE data SET nm_jenis = $1, tahun = $2, no_proyek = $3, nm_proyek = $4, nm_rekanan = $5, tgl_mulai = $6, tgl_akhir = $7, nilai = $8, nm_kota = $9, nm_lokasi = $10, keterangan = $11, tgl_selesai = $12, tgl_bast1 = $13, batas_retensi = $14, klasifikasi = $15, nilai_tamb = $16 WHERE id_datum = $17 RETURNING *;',
       values: [
         nmJenis, tahun, noProyek, namaProyek, namaRekanan, tglMulai, tglAkhir, nilai,
-        nmKota, nmLokasi, keterangan, tglSelesai, tglBast1, batasRetensi, klasifikasi, idDatum,
+        nmKota, nmLokasi, keterangan, tglSelesai, tglBast1, batasRetensi, klasifikasi,
+        nilaiTamb, idDatum,
       ],
     };
     let poolRes;
