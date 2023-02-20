@@ -76,7 +76,9 @@ const createLaporan = async (req, res) => {
         throw new InvariantError('urutan laporan wajib diisi');
       }
     }
-
+    if (typeof (noProyek) !== 'object') {
+      throw new InvariantError('Pastikan tipe data noProyek sudah benar');
+    }
     const qIdData = {
       text: 'SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE d.no_proyek = $1',
       values: [noProyek],
@@ -479,7 +481,7 @@ const createLapHarian = async (req, res) => {
     }
 
     // eslint-disable-next-line max-len
-    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length) {
+    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length || aktivitas.length > 9 || rencana.length > 9 || jabatanhrini.length > 8 || jmlhhrini.length > 8 || jabatanbsk.length > 8 || jmlhbsk.length > 8 || baik.length > 2 || mendung.length > 2 || hujanTinggi.length > 2 || hujanRendah.length > 2 || alat.length > 9 || qty.length > 9 || mhLstDay.length > 2 || mhToday.length > 2 || note.length > 2 || masalah.length > 4 || solusi.length > 4) {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
 
