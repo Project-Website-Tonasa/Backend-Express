@@ -224,7 +224,7 @@ const addDatum = async (req, res) => {
     if (Date.parse(tglMulai) > Date.parse(tglAkhir)) {
       throw new InvariantError('tglMulai tidak boleh lebih duluan daripada tglAkhir');
     }
-    if (!Number(nilai) || Array.isArray(nilai)) {
+    if (Number.isNaN(Number(nilai)) || Array.isArray(nilai)) {
       throw new InvariantError('Nilai harus berupa integer');
     }
 
@@ -341,11 +341,15 @@ const editDatum = async (req, res) => {
     const {
       tahun, noProyek, namaProyek, namaRekanan, tglMulai, tglAkhir, nilai,
       nmKota, nmLokasi, keterangan, klasifikasi, editedBy, tglSelesai, tglBast1,
-      batasRetensi, nilaiTamb,
+      batasRetensi, nilaiTamb, arrPlan,
     } = req.body;
 
     if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
       throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
+    }
+
+    if (!Array.isArray(arrPlan)) {
+      throw new InvariantError('Masukkan array arrPlan dengan benar!');
     }
 
     if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
@@ -370,7 +374,8 @@ const editDatum = async (req, res) => {
     if (Date.parse(tglMulai) > Date.parse(tglAkhir)) {
       throw new InvariantError('tglMulai tidak boleh lebih duluan daripada tglAkhir');
     }
-    if (!Number(nilai) || Array.isArray(nilai) || !Number(nilaiTamb) || Array.isArray(nilaiTamb)) {
+    if (Number.isNaN(Number(nilai)) || Array.isArray(nilai)
+    || Number.isNaN(Number(nilaiTamb)) || Array.isArray(nilaiTamb)) {
       throw new InvariantError('Nilai dan NilaiTamb harus berupa integer');
     }
 
@@ -387,6 +392,16 @@ const editDatum = async (req, res) => {
     }
     const userName = ((poolUserName.rows[0].nama).concat(' - ', (poolUserName.rows[0].sap)));
 
+    const queryUpdatePlan = {
+      text: 'UPDATE plan SET arr_value = $1 WHERE datum_id = $2 RETURNING *;',
+      values: [arrPlan, idDatum],
+    };
+
+    const poolResplan = await pool.query(queryUpdatePlan);
+    if (!((poolResplan.rows).length)) {
+      throw new NotFoundError('Data plan tidak terdaftar');
+    }
+
     const queryUpdate = {
       text: 'UPDATE data SET nm_jenis = $1, tahun = $2, no_proyek = $3, nm_proyek = $4, nm_rekanan = $5, tgl_mulai = $6, tgl_akhir = $7, nilai = $8, nm_kota = $9, nm_lokasi = $10, keterangan = $11, tgl_selesai = $12, tgl_bast1 = $13, batas_retensi = $14, klasifikasi = $15, nilai_tamb = $16 , edited_by = $17, edited_at  = $18 WHERE id_datum = $19 RETURNING *;',
       values: [
@@ -402,6 +417,7 @@ const editDatum = async (req, res) => {
       throw new NotFoundError(`Tidak dapat menemukan data ${idDatum}`);
     }
     poolRes.rows[0] = resBeautifier(poolRes.rows[0]);
+    poolRes.rows[0].arrPlan = poolResplan.rows[0].arr_value;
 
     return res.status(201).send({
       status: 'success',
