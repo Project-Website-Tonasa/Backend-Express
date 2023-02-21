@@ -68,12 +68,17 @@ const createLaporan = async (req, res) => {
       idUser,
     } = req.body;
 
+    if (!namaFile || !jenisLaporan || !noProyek) {
+      throw new InvariantError('Semua field wajib diisi!');
+    }
     if (jenisLaporan === 'Laporan Mingguan' || jenisLaporan === 'Laporan Bulanan') {
       if (!urutanLap) {
         throw new InvariantError('urutan laporan wajib diisi');
       }
     }
-
+    if (typeof (noProyek) !== 'object') {
+      throw new InvariantError('Pastikan tipe data noProyek sudah benar');
+    }
     const qIdData = {
       text: 'SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE d.no_proyek = $1',
       values: [noProyek],
@@ -191,12 +196,11 @@ const getLaporanDetail = async (req, res) => {
 const updateLaporan = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      jenisLaporan,
-      urutanLap,
-    } = req.body;
     const namaFile = req.file.filename;
 
+    if (!namaFile) {
+      throw new InvariantError('File harus diisi');
+    }
     const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
 
     const qFile = {
@@ -213,7 +217,7 @@ const updateLaporan = async (req, res) => {
     }
 
     const query = {
-      text: `UPDATE laporan SET jenis_laporan = '${jenisLaporan}', urutan_lap = '${urutanLap}', file = '${namaFile}', status = 'Ditinjau' WHERE id = ${id} RETURNING *`,
+      text: `UPDATE laporan SET file = '${namaFile}', status = 'Ditinjau' WHERE id = ${id} RETURNING *`,
     };
     await pool.query(query);
     fs.unlink(directoryPath + resFile.rows[0].file, (err) => {
@@ -405,6 +409,7 @@ const updateBastStatus = async (req, res) => {
         data: {
           statusBast: result.rows[0].status_bast1,
           urlFormBast: 'ini link download bast',
+          catatanBast: result.rows[0].catatan_bast,
         },
       });
     } else {
@@ -413,6 +418,7 @@ const updateBastStatus = async (req, res) => {
         data: {
           statusBast: result.rows[0].status_bast1,
           urlFormBast: null,
+          catatanBast: result.rows[0].catatan_bast,
         },
       });
     }
@@ -475,7 +481,7 @@ const createLapHarian = async (req, res) => {
     }
 
     // eslint-disable-next-line max-len
-    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length) {
+    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length || aktivitas.length > 9 || rencana.length > 9 || jabatanhrini.length > 8 || jmlhhrini.length > 8 || jabatanbsk.length > 8 || jmlhbsk.length > 8 || baik.length > 2 || mendung.length > 2 || hujanTinggi.length > 2 || hujanRendah.length > 2 || alat.length > 9 || qty.length > 9 || mhLstDay.length > 2 || mhToday.length > 2 || note.length > 2 || masalah.length > 4 || solusi.length > 4) {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
 
@@ -674,11 +680,21 @@ const getDetailLapHarian = async (req, res) => {
     const { id } = req.params;
 
     const queryGetInfoLH = {
-      text: 'SELECT d.id_datum, d.nm_proyek as pekerjaan, d.nm_rekanan as vendor, DATE(lh.tgl) as tanggal FROM data as d INNER JOIN laporan as l ON l.id_datum = d.id_datum INNER JOIN lap_harian as lh ON lh.id_laporan = l.id WHERE l.id = $1;',
+      text: 'SELECT d.id_datum, d.nm_proyek as pekerjaan, d.nm_rekanan as vendor, lh.tgl as tanggal FROM data as d INNER JOIN laporan as l ON l.id_datum = d.id_datum INNER JOIN lap_harian as lh ON lh.id_laporan = l.id WHERE l.id = $1;',
       values: [id],
     };
     const poolInfoLH = await pool.query(queryGetInfoLH);
     let infoLH = poolInfoLH.rows[0];
+
+    infoLH.tanggal = (infoLH.tanggal).toLocaleString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    if (!infoLH) {
+      throw new NotFoundError(`Tidak ada data laporan harian dengan id laporan : ${id}`);
+    }
 
     const queryGetDescLH = {
       text: 'SELECT lh.id as id_lapharian, lh.aktivitas as aktivitas, lh.rencana as rencana, lh.note as note FROM lap_harian as lh INNER JOIN laporan as l ON l.id = lh.id_laporan WHERE l.id = $1 ORDER BY lh.id',
@@ -725,6 +741,12 @@ const getDetailLapHarian = async (req, res) => {
     };
     const poolCuaca = await pool.query(queryGetCuaca);
 
+    const queryGetManHours = {
+      text: 'SELECT ARRAY_AGG(id) as id_mh, ARRAY_AGG(last_day) as mh_lastday, ARRAY_AGG(today) as mh_today, ARRAY_AGG(acum) as mh_acum FROM (SELECT mh.id, mh.last_day, mh.today, mh.acum FROM man_hours as mh INNER JOIN lap_harian as lh ON mh.id_lap_harian = lh.id INNER JOIN laporan as l ON l.id = lh.id_laporan WHERE l.id = $1 ORDER BY mh.id)sub;',
+      values: [id],
+    };
+    const poolManHours = await pool.query(queryGetManHours);
+
     // descLH.tkToday = poolTenaKer.rows;
     // descLH.tkTomorrow = poolTenaKerB.rows;
     // descLH.alatKerja = poolAlatKerja.rows;
@@ -741,7 +763,12 @@ const getDetailLapHarian = async (req, res) => {
       ...poolAlatKerja.rows[0],
       ...poolNote.rows[0],
       ...poolCuaca.rows[0],
+      ...poolManHours.rows[0],
     };
+
+    Object.keys(infoLH).forEach((key) => {
+      if (infoLH[key] == null) { infoLH[key] = ''; }
+    });
 
     // return res.status(200).send({
     //   status: 'success',
@@ -776,25 +803,29 @@ const editDetailLapHarian = async (req, res) => {
       tgl,
       aktivitas, rencana, note, jabatanhrini, jmlhhrini,
       jabatanbsk, jmlhbsk, baik, mendung, hujanTinggi, hujanRendah, alat, qty, masalah, solusi,
+      mhToday, mhLstDay,
     } = req.body;
 
     // Validate the body request
     // eslint-disable-next-line max-len
-    if (!aktivitas || !rencana || !jabatanhrini || !jmlhhrini || !alat || !qty || !jabatanbsk || !jmlhbsk) {
-      throw new InvariantError('Aktivitas or Rencana or Jabatan or jumlah or Alat or qty wajib diisi!');
+    if (!aktivitas || !rencana || !jabatanhrini || !jmlhhrini || !alat || !qty || !jabatanbsk || !jmlhbsk || !mhToday || !mhLstDay) {
+      throw new InvariantError('Pastikan setiap field telah diisi!');
     }
 
-    console.log(!Array.isArray(aktivitas));
     // eslint-disable-next-line max-len
-    if (!Array.isArray(aktivitas) || !Array.isArray(rencana) || !Array.isArray(baik) || !Array.isArray(mendung) || !Array.isArray(hujanTinggi) || !Array.isArray(hujanRendah) || !Array.isArray(jabatanhrini) || !Array.isArray(jmlhhrini) || !Array.isArray(jabatanbsk) || !Array.isArray(jmlhbsk) || !Array.isArray(alat) || !Array.isArray(qty) || !Array.isArray(masalah) || !Array.isArray(solusi)) {
+    if (!Array.isArray(aktivitas) || !Array.isArray(rencana) || !Array.isArray(note) || !Array.isArray(baik) || !Array.isArray(mendung) || !Array.isArray(hujanTinggi) || !Array.isArray(hujanRendah) || !Array.isArray(jabatanhrini) || !Array.isArray(jmlhhrini) || !Array.isArray(jabatanbsk) || !Array.isArray(jmlhbsk) || !Array.isArray(alat) || !Array.isArray(qty) || !Array.isArray(masalah) || !Array.isArray(solusi) || !Array.isArray(mhToday) || !Array.isArray(mhLstDay)) {
       throw new InvariantError('Pastikan semua tipe data tiap field sudah benar');
     }
 
     // eslint-disable-next-line max-len
-    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length) {
+    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length) {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
-
+    const qGetLap = {
+      text: 'SELECT l.file, d.no_proyek FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum WHERE l.id = $1',
+      values: [id],
+    };
+    const rGetLap = await pool.query(qGetLap);
     // Deleting Previous data
     const qDelLaphar = {
       text: 'DELETE FROM lap_harian WHERE id_laporan = $1;',
@@ -808,9 +839,10 @@ const editDetailLapHarian = async (req, res) => {
     const status = tglLap < currDate ? 'Tepat Waktu' : 'Terlambat';
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
+    const pdfName = `${Date.now()}-lap-${rGetLap.rows[0].no_proyek}-harian.pdf`;
     const qUpdateLap = {
-      text: 'UPDATE laporan SET created_at = $1 WHERE id = $2 RETURNING *',
-      values: [createdAt, id],
+      text: 'UPDATE laporan SET created_at= $1, file = $2 WHERE id = $3 RETURNING *',
+      values: [createdAt, pdfName, id],
     };
     // const poolLap = await pool.query(qUpdateLap);
     await pool.query(qUpdateLap);
@@ -866,12 +898,66 @@ const editDetailLapHarian = async (req, res) => {
       pNote.push(pool.query(qNote));
     }
 
+    const pMh = [];
+    let qMh;
+    for (let i = 0; i < mhToday.length; i += 1) {
+      qMh = {
+        text: 'INSERT INTO man_hours (id, last_day, today, acum, id_lap_harian) VALUES (DEFAULT, $1, $2, $3, $4)',
+        values: [
+          mhLstDay[i],
+          mhToday[i],
+          mhLstDay[i] + mhToday[i],
+          poolLapHar.rows[0].id,
+        ],
+      };
+      pMh.push(pool.query(qMh));
+    }
+
     try {
       await Promise.all(ptenKerjaHrIni);
       await Promise.all(ptenKerjaBsk);
       await pool.query(qkondCuaca);
       await Promise.all(pAlatKerja);
       await Promise.all(pNote);
+      await Promise.all(pMh);
+    } catch (e) {
+      throw new InvariantError(e);
+    }
+    const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
+    fs.unlink(directoryPath + rGetLap.rows[0].file, (err) => {
+      if (err) {
+        throw new NotFoundError('File tidak ditemukan');
+      }
+      console.log('deleted');
+    });
+    try {
+      // const myHeaders = new fetch.Headers();
+      // myHeaders.append("Authorization", token);
+      // const setting = {
+      //   method: 'GET',
+      //   // headers: myHeaders,
+      //   redirect: 'follow',
+      // };
+      // const response = await fetch(`http://localhost:3000/detaillapHarian/${rLap.rows[0].id}`, setting);
+      // const data = await response.json();
+      // console.log('ini datanyaa', data.data);
+      console.log('ini id', id);
+      const data = await fetchData(id);
+      console.log('dataa', data);
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      const content = await compilehtml(data);
+      await page.setContent(content);
+      const pdfPath = path.join(process.cwd(), 'resources\\', `${pdfName}`);
+      await page.pdf({
+        path: pdfPath,
+        format: 'A4',
+        printBackground: true,
+      });
+
+      console.log('success');
+      await browser.close();
     } catch (e) {
       throw new InvariantError(e);
     }
