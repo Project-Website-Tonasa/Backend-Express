@@ -214,17 +214,17 @@ const getStatistikPlanVsActual = async (req, res) => {
       strplan: stringPlan, strreal: stringReal,
     } = poolRes.rows[0];
 
-    const arrPlan = JSON.parse(stringPlan);
-    const arrReal = JSON.parse(stringReal);
-    const totalWeek = Math.max((arrPlan).length, (arrReal).length);
+    // const arrPlan = JSON.parse(stringPlan);
+    // const arrReal = JSON.parse(stringReal);
+    const totalWeek = Math.max((stringPlan).length, (stringReal).length);
 
     const arrOfchart = [];
 
     for (let i = 0; i < totalWeek; i += 1) {
       const chartObj = {};
       chartObj.week = i + 1;
-      chartObj.plan = arrPlan[i];
-      chartObj.actual = arrReal[i];
+      chartObj.plan = stringPlan[i];
+      chartObj.actual = stringReal[i];
 
       if (!chartObj.actual) {
         chartObj.actual = null;
