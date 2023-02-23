@@ -81,6 +81,14 @@ exports.up = ((pgm) => {
       type: 'VARCHAR',
       notNull: true,
     },
+    edited_by: {
+      type: 'VARCHAR',
+      notNull: true,
+    },
+    edited_at: {
+      type: 'TIMESTAMP',
+      notNull: true,
+    },
   });
 });
 

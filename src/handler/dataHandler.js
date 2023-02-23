@@ -15,6 +15,7 @@ const resBeautifier = (data) => {
 
   dataobj.tgl_mulai = (dataobj.tgl_mulai).toLocaleString('id-ID', options);
   dataobj.tgl_akhir = (dataobj.tgl_akhir).toLocaleString('id-ID', options);
+  dataobj.edited_at = (dataobj.edited_at).toLocaleString('id-ID', options);
 
   dataobj.status_data = dataobj.status;
   delete dataobj.status;
@@ -27,6 +28,9 @@ const resBeautifier = (data) => {
   }
   if (dataobj.batas_retensi) {
     dataobj.batas_retensi = (dataobj.batas_retensi).toLocaleString('id-ID', options);
+  }
+  if (dataobj.nilai_tamb) {
+    dataobj.nilaiTamb_str = (Number(dataobj.nilai_tamb)).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
   }
 
   Object.keys(dataobj).forEach((key) => {
@@ -43,7 +47,8 @@ const findLatestActual = async () => {
   const promises = [];
 
   for (let i = 0; i < (poolActual.rows).length; i += 1) {
-    const arrActual = JSON.parse(poolActual.rows[i].arr_value);
+    // const arrActual = JSON.parse(poolActual.rows[i].arr_value);
+    const arrActual = poolActual.rows[i].arr_value;
     if (arrActual) {
       const lastVal = arrActual[arrActual.length - 1];
 
@@ -52,11 +57,8 @@ const findLatestActual = async () => {
         values: [lastVal, poolActual.rows[i].datum_id],
       };
       promises.push(pool.query(queryUpdateReal));
-      // await pool.query(queryUpdateReal);
     }
   }
-  // console.log(promises);
-
   await Promise.all(promises);
 };
 
@@ -79,7 +81,8 @@ const findCurrentPlan = async () => {
     const plan = poolResPlan.rows[0];
 
     if (plan && (plan.arr_value)) {
-      const arrPlan = JSON.parse(plan.arr_value);
+      // const arrPlan = JSON.parse(plan.arr_value);
+      const arrPlan = plan.arr_value;
 
       if (arrPlan[currentWeek - 1]) {
         const queryUpdatePlan = {
@@ -109,7 +112,6 @@ const setDeviasiStatus = async () => {
 
   for (let i = 0; i < planReal.length; i += 1) {
     const deviasi = planReal[i].real - planReal[i].plan;
-    // console.log('id_datum: ', planReal[i].id_datum, ' deviasi: ', deviasi);
     let status = '';
 
     if (planReal[i].real === 100) {
@@ -160,75 +162,104 @@ const setProgress = async () => {
 };
 
 const getData = async (req, res) => {
-  await findLatestActual();
-  await findCurrentPlan();
-  await setDeviasiStatus();
-  await setProgress();
+  try {
+    await findLatestActual();
+    await findCurrentPlan();
+    await setDeviasiStatus();
+    await setProgress();
 
-  // Pemanggilan Get
-  const queryGet = {
-    text: 'SELECT * FROM data order by id_datum',
-  };
-  const dataRes = await pool.query(queryGet);
-  const data = dataRes.rows;
+    // Pemanggilan Get
+    const queryGet = {
+      text: 'SELECT * FROM data order by id_datum',
+    };
+    const dataRes = await pool.query(queryGet);
+    const data = dataRes.rows;
 
-  for (let i = 0; i < (data).length; i += 1) {
-    data[i] = resBeautifier(data[i]);
+    for (let i = 0; i < (data).length; i += 1) {
+      data[i] = resBeautifier(data[i]);
+    }
+
+    return res.status(200).send({
+      status: 'success',
+      data,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).send({
+      status: 'error',
+      message: `Gagal mengambil data. ${e.message}`,
+    });
   }
-
-  return res.status(200).send({
-    status: 'success',
-    data,
-  });
 };
 
 const addDatum = async (req, res) => {
   try {
     const {
-      nmJenis, tahun, noProyek, namaProyek, namaRekanan,
-      tglMulai, tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi, arrPlan,
+      tahun, noProyek, namaProyek, namaRekanan,
+      tglMulai, tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi, arrPlan, editedBy,
     } = req.body;
 
-    if (typeof (arrPlan) !== 'object') {
-      throw new InvariantError('Masukkan array arrPlan dengan benar!');
+    if (!Array.isArray(arrPlan)) {
+      throw new InvariantError('Masukkan array arrPlan dengan benar! Pastikan bertipe array (bukan string)');
+    }
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan tahun dengan benar');
     }
 
-    // Tambahkan validasi di siniii weh, untuk tiap tipe, kayak nm jenis, tahun, no proyek, dsb
+    let nmJenis;
+
+    if (noProyek.includes('84', 0)) {
+      nmJenis = 'CAPEX';
+    } else if (noProyek.includes('86', 0)) {
+      nmJenis = 'OPEX';
+    } else if (noProyek.includes('100', 0)) {
+      nmJenis = 'FAKE';
+    } else {
+      throw new InvariantError('Nomor proyek harus diawali dengan 84 atau 86');
+    }
+
+    if (!Date.parse(tglMulai) || !Date.parse(tglAkhir)) {
+      throw new InvariantError('Invalid Date tglMulai atau tglAkhir');
+    }
+    if (Date.parse(tglMulai) > Date.parse(tglAkhir)) {
+      throw new InvariantError('tglMulai tidak boleh lebih duluan daripada tglAkhir');
+    }
+    if (Number.isNaN(Number(nilai)) || Array.isArray(nilai)) {
+      throw new InvariantError('Nilai harus berupa integer');
+    }
+
+    const editedAt = new Date(new Date().setHours(0, 0, 0, 0));
+
+    const queryGetUserName = {
+      text: 'SELECT nama, sap FROM admin_staff WHERE id = $1',
+      values: [editedBy],
+    };
+    const poolUserName = await pool.query(queryGetUserName);
+
+    if (!(poolUserName.rows).length) {
+      throw new InvariantError('Admin/Staff Tidak Terdaftar');
+    }
+    const userName = ((poolUserName.rows[0].nama).concat(' - ', (poolUserName.rows[0].sap)));
+
     const queryInsert = {
-      text: 'INSERT INTO data (id_datum, nm_jenis, tahun, no_proyek, nm_proyek, nm_rekanan, tgl_mulai, tgl_akhir, nilai, nm_kota, nm_lokasi, keterangan, klasifikasi) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *;',
+      text: 'INSERT INTO data (id_datum, nm_jenis, tahun, no_proyek, nm_proyek, nm_rekanan, tgl_mulai, tgl_akhir, nilai, nm_kota, nm_lokasi, keterangan, klasifikasi, edited_by, edited_at) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *;',
       values: [
         nmJenis, tahun, noProyek, namaProyek, namaRekanan, tglMulai,
-        tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi,
+        tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi, userName, editedAt,
       ],
     };
 
-    let poolRes;
-
-    try {
-      poolRes = await pool.query(queryInsert);
-      poolRes.rows[0] = resBeautifier(poolRes.rows[0]);
-    } catch (e) {
-      throw new InvariantError(e);
-    }
-
-    const arrPlanStr = `[${arrPlan}]`;
+    const poolRes = await pool.query(queryInsert);
+    poolRes.rows[0] = resBeautifier(poolRes.rows[0]);
 
     const queryInsertPlan = {
       text: 'INSERT INTO plan (datum_id, arr_value) VALUES ($1, $2) RETURNING *;',
-      values: [
-        poolRes.rows[0].id_datum, arrPlanStr,
-      ],
+      values: [poolRes.rows[0].id_datum, arrPlan],
     };
 
-    try {
-      const poolResPlan = await pool.query(queryInsertPlan);
-      poolRes.rows[0].arrplan = poolResPlan.rows[0].arr_value;
-      if (poolRes.rows[0].arrplan) {
-        poolRes.rows[0].arrplan = JSON.parse(poolRes.rows[0].arrplan);
-      }
-    } catch (e) {
-      throw new InvariantError(e);
-    }
+    const poolResPlan = await pool.query(queryInsertPlan);
+    poolRes.rows[0].arrplan = poolResPlan.rows[0].arr_value;
+
     const queryInsertActual = {
       text: 'INSERT INTO real (datum_id) VALUES ($1)',
       values: [poolRes.rows[0].id_datum],
@@ -249,6 +280,14 @@ const addDatum = async (req, res) => {
         message: e.message,
       });
     }
+
+    if ((e.message).includes('duplicate key')) {
+      return res.status(400).send({
+        status: 'fail',
+        message: 'Duplikat nomor proyek',
+      });
+    }
+
     return res.status(500).send({
       status: 'error',
       message: 'Gagal menambahkan data',
@@ -260,8 +299,8 @@ const getDatum = async (req, res) => {
   try {
     const { idDatum } = req.params;
 
-    if (Number.isNaN(Number(idDatum))) {
-      throw new InvariantError('Gagal mengambil data. Mohon isi idDatum proyek dengan benar');
+    if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
+      throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
     }
 
     const queryGet = {
@@ -269,7 +308,6 @@ const getDatum = async (req, res) => {
       values: [idDatum],
     };
     const poolDatum = await pool.query(queryGet);
-    // const datum = poolDatum.rows[0];
 
     if (!(poolDatum.rows[0])) {
       throw new NotFoundError(`Data dengan id: ${idDatum} tidak ditemukan`);
@@ -292,7 +330,7 @@ const getDatum = async (req, res) => {
     }
     return res.status(500).send({
       status: 'error',
-      message: 'Gagal menghapus data',
+      message: 'Gagal mengambil data',
     });
   }
 };
@@ -300,33 +338,86 @@ const getDatum = async (req, res) => {
 const editDatum = async (req, res) => {
   try {
     const { idDatum } = req.params;
-
-    if (!idDatum || Number.isNaN(Number(idDatum))) {
-      throw new InvariantError('Gagal mengedit data. Mohon isi idDatum proyek dengan benar');
-    }
-
     const {
-      nmJenis, tahun, noProyek, namaProyek, namaRekanan, tglMulai, tglAkhir, nilai,
-      nmKota, nmLokasi, keterangan, tglSelesai, tglBast1, batasRetensi, klasifikasi,
+      tahun, noProyek, namaProyek, namaRekanan, tglMulai, tglAkhir, nilai,
+      nmKota, nmLokasi, keterangan, klasifikasi, editedBy, tglSelesai, tglBast1,
+      batasRetensi, nilaiTamb, arrPlan,
     } = req.body;
 
+    if (!(Number.isInteger(Number(idDatum))) || Array.isArray(idDatum)) {
+      throw new InvariantError('Masukkan id datum dengan benar (bertipe integer)');
+    }
+
+    if (!Array.isArray(arrPlan)) {
+      throw new InvariantError('Masukkan array arrPlan dengan benar!');
+    }
+
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan tahun dengan benar');
+    }
+
+    let nmJenis;
+
+    if (noProyek.includes('84', 0)) {
+      nmJenis = 'CAPEX';
+    } else if (noProyek.includes('86', 0)) {
+      nmJenis = 'OPEX';
+    } else if (noProyek.includes('100', 0)) {
+      nmJenis = 'FAKE';
+    } else {
+      throw new InvariantError('Nomor proyek harus diawali dengan 84 atau 86');
+    }
+
+    if (!Date.parse(tglMulai) || !Date.parse(tglAkhir)) {
+      throw new InvariantError('Invalid Date tglMulai atau tglAkhir');
+    }
+    if (Date.parse(tglMulai) > Date.parse(tglAkhir)) {
+      throw new InvariantError('tglMulai tidak boleh lebih duluan daripada tglAkhir');
+    }
+    if (Number.isNaN(Number(nilai)) || Array.isArray(nilai)
+    || Number.isNaN(Number(nilaiTamb)) || Array.isArray(nilaiTamb)) {
+      throw new InvariantError('Nilai dan NilaiTamb harus berupa integer');
+    }
+
+    const editedAt = new Date(new Date().setHours(0, 0, 0, 0));
+
+    const queryGetUserName = {
+      text: 'SELECT nama, sap FROM admin_staff WHERE id = $1',
+      values: [editedBy],
+    };
+    const poolUserName = await pool.query(queryGetUserName);
+
+    if (!(poolUserName.rows).length) {
+      throw new InvariantError('Admin/Staff Tidak Terdaftar');
+    }
+    const userName = ((poolUserName.rows[0].nama).concat(' - ', (poolUserName.rows[0].sap)));
+
+    const queryUpdatePlan = {
+      text: 'UPDATE plan SET arr_value = $1 WHERE datum_id = $2 RETURNING *;',
+      values: [arrPlan, idDatum],
+    };
+
+    const poolResplan = await pool.query(queryUpdatePlan);
+    if (!((poolResplan.rows).length)) {
+      throw new NotFoundError('Data plan tidak terdaftar');
+    }
+
     const queryUpdate = {
-      text: 'UPDATE data SET nm_jenis = $1, tahun = $2, no_proyek = $3, nm_proyek = $4, nm_rekanan = $5, tgl_mulai = $6, tgl_akhir = $7, nilai = $8, nm_kota = $9, nm_lokasi = $10, keterangan = $11, tgl_selesai = $12, tgl_bast1 = $13, batas_retensi = $14, klasifikasi = $15 WHERE id_datum = $16 RETURNING *;',
+      text: 'UPDATE data SET nm_jenis = $1, tahun = $2, no_proyek = $3, nm_proyek = $4, nm_rekanan = $5, tgl_mulai = $6, tgl_akhir = $7, nilai = $8, nm_kota = $9, nm_lokasi = $10, keterangan = $11, tgl_selesai = $12, tgl_bast1 = $13, batas_retensi = $14, klasifikasi = $15, nilai_tamb = $16 , edited_by = $17, edited_at  = $18 WHERE id_datum = $19 RETURNING *;',
       values: [
         nmJenis, tahun, noProyek, namaProyek, namaRekanan, tglMulai, tglAkhir, nilai,
-        nmKota, nmLokasi, keterangan, tglSelesai, tglBast1, batasRetensi, klasifikasi, idDatum,
+        nmKota, nmLokasi, keterangan, tglSelesai, tglBast1, batasRetensi, klasifikasi,
+        nilaiTamb, userName, editedAt, idDatum,
       ],
     };
-    let poolRes;
-    try {
-      poolRes = await pool.query(queryUpdate);
-    } catch (e) {
-      throw new InvariantError(e);
-    }
+
+    const poolRes = await pool.query(queryUpdate);
+
     if (!poolRes.rows[0]) {
       throw new NotFoundError(`Tidak dapat menemukan data ${idDatum}`);
     }
     poolRes.rows[0] = resBeautifier(poolRes.rows[0]);
+    poolRes.rows[0].arrPlan = poolResplan.rows[0].arr_value;
 
     return res.status(201).send({
       status: 'success',
@@ -342,9 +433,15 @@ const editDatum = async (req, res) => {
         message: e.message,
       });
     }
+    if ((e.message).includes('duplicate key')) {
+      return res.status(400).send({
+        status: 'fail',
+        message: 'Duplikat nomor proyek',
+      });
+    }
     return res.status(500).send({
       status: 'error',
-      message: 'Gagal menghapus data',
+      message: 'Gagal mengupdate data',
     });
   }
 };
