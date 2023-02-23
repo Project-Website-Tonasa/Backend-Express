@@ -481,7 +481,7 @@ const createLapHarian = async (req, res) => {
     }
 
     // eslint-disable-next-line max-len
-    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length || aktivitas.length > 9 || rencana.length > 9 || jabatanhrini.length > 8 || jmlhhrini.length > 8 || jabatanbsk.length > 8 || jmlhbsk.length > 8 || baik.length > 2 || mendung.length > 2 || hujanTinggi.length > 2 || hujanRendah.length > 2 || alat.length > 9 || qty.length > 9 || mhLstDay.length > 2 || mhToday.length > 2 || note.length > 2 || masalah.length > 4 || solusi.length > 4) {
+    if (jabatanhrini.length !== jmlhhrini.length || jabatanbsk.length !== jmlhbsk.length || alat.length !== qty.length || masalah.length !== solusi.length || mhToday.length !== mhLstDay.length || aktivitas.length > 10 || rencana.length > 10 || jabatanhrini.length > 9 || jmlhhrini.length > 9 || jabatanbsk.length > 9 || jmlhbsk.length > 9 || baik.length > 3 || mendung.length > 3 || hujanTinggi.length > 3 || hujanRendah.length > 3 || alat.length > 10 || qty.length > 10 || mhLstDay.length > 3 || mhToday.length > 3 || note.length > 3 || masalah.length > 5 || solusi.length > 5) {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
 
