@@ -851,10 +851,13 @@ const editDetailLapHarian = async (req, res) => {
       throw new InvariantError('Pastikan panjang field pada array sudah benar');
     }
     const qGetLap = {
-      text: 'SELECT l.file, d.no_proyek FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum WHERE l.id = $1',
+      text: 'SELECT l.file, d.no_proyek, l.status FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum WHERE l.id = $1',
       values: [id],
     };
     const rGetLap = await pool.query(qGetLap);
+    if (rGetLap.rows[0].status !== 'Revisi') {
+      throw new InvariantError('Laporan gagal diperbarui. Status laporan bukan revisi');
+    }
     // Deleting Previous data
     const qDelLaphar = {
       text: 'DELETE FROM lap_harian WHERE id_laporan = $1;',
@@ -870,7 +873,7 @@ const editDetailLapHarian = async (req, res) => {
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
     const pdfName = `${Date.now()}-lap-${rGetLap.rows[0].no_proyek}-harian.pdf`;
     const qUpdateLap = {
-      text: 'UPDATE laporan SET created_at= $1, file = $2 WHERE id = $3 RETURNING *',
+      text: "UPDATE laporan SET created_at= $1, file = $2, status = 'Ditinjau' WHERE id = $3 RETURNING *",
       values: [createdAt, pdfName, id],
     };
     // const poolLap = await pool.query(qUpdateLap);
