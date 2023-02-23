@@ -172,7 +172,7 @@ const getLaporanDetail = async (req, res) => {
   const { id } = req.params;
   try {
     const query = {
-      text: 'SELECT l.id, l.jenis_laporan, l.urutan_lap, d.nm_rekanan, l.catatan, l.status, d.no_proyek, d.nm_proyek FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum LEFT JOIN lap_harian AS lh ON l.id = lh.id_laporan WHERE id = $1',
+      text: 'SELECT l.id, l.jenis_laporan, l.urutan_lap, d.nm_rekanan, l.catatan, l.status, d.no_proyek, d.nm_proyek FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum LEFT JOIN lap_harian AS lh ON l.id = lh.id_laporan WHERE l.id = $1',
       values: [id],
     };
     const result = await pool.query(query);
