@@ -685,7 +685,7 @@ const getDetailLapHarian = async (req, res) => {
     const { id } = req.params;
 
     const queryGetInfoLH = {
-      text: 'SELECT d.id_datum, d.nm_proyek as pekerjaan, d.nm_rekanan as vendor, lh.tgl as tanggal FROM data as d INNER JOIN laporan as l ON l.id_datum = d.id_datum INNER JOIN lap_harian as lh ON lh.id_laporan = l.id WHERE l.id = $1;',
+      text: 'SELECT d.id_datum, d.nm_proyek as pekerjaan, d.nm_rekanan as vendor, lh.tgl as tanggal, d.no_proyek, l.urutan_lap as urutan_ke FROM data as d INNER JOIN laporan as l ON l.id_datum = d.id_datum INNER JOIN lap_harian as lh ON lh.id_laporan = l.id WHERE l.id = $1;',
       values: [id],
     };
     const poolInfoLH = await pool.query(queryGetInfoLH);
