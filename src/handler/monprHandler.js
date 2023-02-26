@@ -83,18 +83,56 @@ const addMonitoringPR = async (req, res) => {
 };
 
 const getMonitoringPR = async (req, res) => {
-  const queryGet = {
-    text: 'SELECT * FROM monitoring_pr ORDER BY id_monitor',
-  };
-  const data = await pool.query(queryGet);
+  try {
+    const { pageSize, currentPage } = req.query;
 
-  for (let i = 0; i < (data.rows).length; i += 1) {
-    data.rows[i] = resBeautifier(data.rows[i]);
+    // PAGINATION
+    if (pageSize && currentPage) {
+      const totalRows = await pool.query('SELECT COUNT (id_monitor) FROM monitoring_pr;');
+      // console.log('Total Rows:', totalRows.rows[0].count);
+      const totalPages = Math.ceil(totalRows.rows[0].count / pageSize);
+      const offset = (currentPage - 1) * pageSize;
+
+      const queryGet = {
+        text: `SELECT * FROM monitoring_pr ORDER BY id_monitor LIMIT ${pageSize} OFFSET ${offset}`,
+      };
+      const data = await pool.query(queryGet);
+
+      for (let i = 0; i < (data.rows).length; i += 1) {
+        data.rows[i] = resBeautifier(data.rows[i]);
+      }
+      return res.status(200).send({
+        status: 'success',
+        data: data.rows,
+        page: {
+          page_size: pageSize,
+          total_rows: totalRows.rows[0].count,
+          total_pages: totalPages,
+          current_page: currentPage,
+        },
+      });
+    }
+
+    // TANPA PAGINATION
+    const queryGet = {
+      text: 'SELECT * FROM monitoring_pr ORDER BY id_monitor',
+    };
+    const data = await pool.query(queryGet);
+
+    for (let i = 0; i < (data.rows).length; i += 1) {
+      data.rows[i] = resBeautifier(data.rows[i]);
+    }
+    return res.status(200).send({
+      status: 'success',
+      data: data.rows,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).send({
+      status: 'error',
+      message: `Gagal mengambil data. ${e.message}`,
+    });
   }
-  return res.status(200).send({
-    status: 'success',
-    data: data.rows,
-  });
 };
 
 const getDetailMonPr = async (req, res) => {
