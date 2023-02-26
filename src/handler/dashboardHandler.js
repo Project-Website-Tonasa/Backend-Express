@@ -201,7 +201,7 @@ const getStatistikPlanVsActual = async (req, res) => {
     }
 
     const queryGet = {
-      text: 'SELECT p.arr_value as strplan, r.arr_value as strreal FROM plan as p INNER JOIN real as r ON r.datum_id=p.datum_id where p.datum_id=$1;',
+      text: 'SELECT p.arr_value as strplan, r.arr_value as strreal FROM plan as p LEFT JOIN real as r ON r.datum_id=p.datum_id where p.datum_id=$1;',
       values: [idDatum],
     };
     const poolRes = await pool.query(queryGet);
@@ -209,13 +209,18 @@ const getStatistikPlanVsActual = async (req, res) => {
     if (!(poolRes.rows[0])) {
       throw new NotFoundError(`Data dengan id: ${idDatum} tidak ditemukan`);
     }
+    console.log(poolRes.rows[0]);
 
-    const {
-      strplan: stringPlan, strreal: stringReal,
+    let {
+      strplan: stringPlan = [], strreal: stringReal = [],
     } = poolRes.rows[0];
+    stringPlan ||= [];
+    stringReal ||= [];
 
     // const arrPlan = JSON.parse(stringPlan);
     // const arrReal = JSON.parse(stringReal);
+    // console.log(stringPlan);
+    // console.log(stringReal);
     const totalWeek = Math.max((stringPlan).length, (stringReal).length);
 
     const arrOfchart = [];

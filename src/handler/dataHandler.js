@@ -292,8 +292,8 @@ const addDatum = async (req, res) => {
     poolRes.rows[0].arrplan = poolResPlan.rows[0].arr_value;
 
     const queryInsertActual = {
-      text: 'INSERT INTO real (datum_id) VALUES ($1)',
-      values: [poolRes.rows[0].id_datum],
+      text: 'INSERT INTO real (datum_id, arr_value) VALUES ($1, $2)',
+      values: [poolRes.rows[0].id_datum, []],
     };
     await pool.query(queryInsertActual);
 
