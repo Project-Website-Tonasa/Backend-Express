@@ -163,12 +163,43 @@ const setProgress = async () => {
 
 const getData = async (req, res) => {
   try {
+    const { pageSize, currentPage } = req.query;
     await findLatestActual();
     await findCurrentPlan();
     await setDeviasiStatus();
     await setProgress();
 
     // Pemanggilan Get
+
+    // PAGINATION
+    if (pageSize && currentPage) {
+      const totalRows = await pool.query('SELECT COUNT (id_datum) FROM data;');
+      // console.log('Total Rows:', totalRows.rows[0].count);
+      const totalPages = Math.ceil(totalRows.rows[0].count / pageSize);
+      const offset = (currentPage - 1) * pageSize;
+      const queryGet = {
+        text: `SELECT * FROM data ORDER BY id_datum LIMIT ${pageSize} OFFSET ${offset}`,
+      };
+      const dataRes = await pool.query(queryGet);
+      const data = dataRes.rows;
+
+      for (let i = 0; i < (data).length; i += 1) {
+        data[i] = resBeautifier(data[i]);
+      }
+
+      return res.status(200).send({
+        status: 'success',
+        data,
+        page: {
+          page_size: pageSize,
+          total_rows: totalRows.rows[0].count,
+          total_pages: totalPages,
+          current_page: currentPage,
+        },
+      });
+    }
+
+    /// TANPA PAGINATION
     const queryGet = {
       text: 'SELECT * FROM data order by id_datum',
     };
