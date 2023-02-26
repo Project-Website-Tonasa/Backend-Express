@@ -231,7 +231,7 @@ const addDatum = async (req, res) => {
     const editedAt = new Date(new Date().setHours(0, 0, 0, 0));
 
     const queryGetUserName = {
-      text: 'SELECT nama, sap FROM admin_staff WHERE id = $1',
+      text: 'SELECT nama, sap FROM admin_staff WHERE id_user = $1',
       values: [editedBy],
     };
     const poolUserName = await pool.query(queryGetUserName);
@@ -382,7 +382,7 @@ const editDatum = async (req, res) => {
     const editedAt = new Date(new Date().setHours(0, 0, 0, 0));
 
     const queryGetUserName = {
-      text: 'SELECT nama, sap FROM admin_staff WHERE id = $1',
+      text: 'SELECT nama, sap FROM admin_staff WHERE id_user = $1',
       values: [editedBy],
     };
     const poolUserName = await pool.query(queryGetUserName);
