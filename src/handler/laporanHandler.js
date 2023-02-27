@@ -639,6 +639,11 @@ const createLapHarian = async (req, res) => {
       await Promise.all(pNote);
       await Promise.all(pMh);
     } catch (e) {
+      const qDelLaphar = {
+        text: 'DELETE FROM laporan WHERE id = $1;',
+        values: [rLap.rows[0].id],
+      };
+      await pool.query(qDelLaphar);
       throw new InvariantError(e);
     }
     // const qLapFile = {
@@ -679,12 +684,18 @@ const createLapHarian = async (req, res) => {
       console.log('success');
       await browser.close();
     } catch (e) {
+      const qDelLaphar = {
+        text: 'DELETE FROM laporan WHERE id = $1;',
+        values: [rLap.rows[0].id],
+      };
+      await pool.query(qDelLaphar);
       throw new InvariantError(e);
     }
 
     return res.status(201).send({
       status: 'success',
       message: 'laporan has been created successfully',
+      url: `${baseUrl}/preview${pdfName}`,
     });
   } catch (e) {
     if (e instanceof ClientError) {
@@ -993,6 +1004,7 @@ const editDetailLapHarian = async (req, res) => {
     return res.status(201).send({
       status: 'success',
       message: 'laporan has been created successfully',
+      url: `${baseUrl}/preview${pdfName}`,
     });
   } catch (e) {
     console.error(e);
