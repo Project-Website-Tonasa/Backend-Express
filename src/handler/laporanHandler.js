@@ -99,9 +99,6 @@ const createLaporan = async (req, res) => {
         throw new InvariantError('urutan laporan wajib diisi');
       }
     }
-    if (typeof (noProyek) !== 'object') {
-      throw new InvariantError('Pastikan tipe data noProyek sudah benar');
-    }
     const qIdData = {
       text: 'SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE d.no_proyek = $1',
       values: [noProyek],
