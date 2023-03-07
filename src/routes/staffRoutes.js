@@ -4,10 +4,10 @@ const authJwt = require('../middleware/authUser');
 
 const router = Router();
 
-router.post('/staff/tambah', staffHandler.createStaff);
+router.post('/staff/tambah', [authJwt.verifyToken, authJwt.isAdmin], staffHandler.createStaff);
 router.get('/staff', [authJwt.verifyToken, authJwt.isAdmin], staffHandler.getAllStaff);
-router.get('/staff/:id', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], staffHandler.getStaffById);
-router.delete('/staff/:id', staffHandler.deleteStaff);
-router.put('/staff/:id', staffHandler.updateStaff);
+router.get('/staff/:id', [authJwt.verifyToken, authJwt.isAdmin], staffHandler.getStaffById);
+router.delete('/staff/:id', [authJwt.verifyToken, authJwt.isAdmin], staffHandler.deleteStaff);
+router.put('/staff/:id', [authJwt.verifyToken, authJwt.isAdminOrStaff], staffHandler.updateStaff);
 
 module.exports = router;

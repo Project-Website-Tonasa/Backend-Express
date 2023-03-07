@@ -34,7 +34,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-const isAdmin = async (req, res, next) => {
+const isAdminOrStaff = async (req, res, next) => {
   try {
     const query = {
       text: 'SELECT username, role, id FROM users WHERE id=$1;',
@@ -46,6 +46,24 @@ const isAdmin = async (req, res, next) => {
       return;
     }
     res.status(403).json({ msg: 'Require admin or staff role!' });
+    return;
+  } catch (error) {
+    res.status(400).json({ msg: error.message });
+  }
+};
+
+const isAdmin = async (req, res, next) => {
+  try {
+    const query = {
+      text: 'SELECT username, role, id FROM users WHERE id=$1;',
+      values: [req.user.user],
+    };
+    const result = await pool.query(query);
+    if (result.rows[0].role === 'admin') {
+      next();
+      return;
+    }
+    res.status(403).json({ msg: 'Require admin role!' });
     return;
   } catch (error) {
     res.status(400).json({ msg: error.message });
@@ -75,5 +93,6 @@ module.exports = {
   verifyToken,
   isAdmin,
   isAdminOrStafOrKontraktor,
+  isAdminOrStaff,
   catchError,
 };
