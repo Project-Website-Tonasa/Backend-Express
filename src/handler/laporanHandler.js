@@ -18,10 +18,12 @@ const compilehtml = async (data) => {
   return hbs.compile(file)(data);
 };
 
-const fetchData = async (idLap) => {
+const fetchData = async (idLap, token) => {
+  const myHeaders = new fetch.Headers();
+  myHeaders.append('Authorization', token);
   const setting = {
     method: 'GET',
-    // headers: myHeaders,
+    headers: myHeaders,
     redirect: 'follow',
   };
   const response = await fetch(`http://localhost:3000/detaillapHarian/${idLap}`, setting);
@@ -494,6 +496,7 @@ const createLapHarian = async (req, res) => {
       solusi,
       mhToday,
       mhLstDay,
+      token,
     } = req.body;
 
     // Validate the body request
@@ -667,7 +670,7 @@ const createLapHarian = async (req, res) => {
       // const data = await response.json();
       // console.log('ini datanyaa', data.data);
       console.log('ini id', rLap.rows[0].id);
-      const data = await fetchData(rLap.rows[0].id);
+      const data = await fetchData(rLap.rows[0].id, token);
       console.log('dataa', data);
       const browser = await puppeteer.launch();
       const page = await browser.newPage();
@@ -695,7 +698,7 @@ const createLapHarian = async (req, res) => {
     return res.status(201).send({
       status: 'success',
       message: 'laporan has been created successfully',
-      url: `${baseUrl}/preview${pdfName}`,
+      url: `${baseUrl}preview/${pdfName}`,
     });
   } catch (e) {
     if (e instanceof ClientError) {
@@ -840,7 +843,7 @@ const editDetailLapHarian = async (req, res) => {
       tgl,
       aktivitas, rencana, note, jabatanhrini, jmlhhrini,
       jabatanbsk, jmlhbsk, baik, mendung, hujanTinggi, hujanRendah, alat, qty, masalah, solusi,
-      mhToday, mhLstDay,
+      mhToday, mhLstDay, token,
     } = req.body;
 
     // Validate the body request
@@ -982,7 +985,7 @@ const editDetailLapHarian = async (req, res) => {
       // const data = await response.json();
       // console.log('ini datanyaa', data.data);
       console.log('ini id', id);
-      const data = await fetchData(id);
+      const data = await fetchData(id, token);
       console.log('dataa', data);
       const browser = await puppeteer.launch();
       const page = await browser.newPage();

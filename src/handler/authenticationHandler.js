@@ -29,7 +29,7 @@ const signIn = async (req, res) => {
     }
 
     const token = jwt.sign({ user: result.rows[0].id }, process.env.SECRET, {
-      expiresIn: 120,
+      expiresIn: 300,
     });
 
     const refreshToken = await refreshTokenHandler.createToken(result.rows[0]);
@@ -91,7 +91,7 @@ const refreshToken = async (req, res) => {
     };
     await pool.query(queryUser);
     const newAccessToken = jwt.sign({ user: result.rows[0].id_user }, process.env.SECRET, {
-      expiresIn: 120,
+      expiresIn: 300,
     });
 
     return res.status(200).json({
