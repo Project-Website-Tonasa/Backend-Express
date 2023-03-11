@@ -549,9 +549,10 @@ const createLapHarian = async (req, res) => {
       throw new NotFoundError('Pengguna tidak ditemukan atau tidak memiliki role kontraktor');
     }
 
-    const currDate = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+    const currDate = new Date().getTime();
     const tglLap = Date.parse(tgl);
     const status = tglLap <= currDate ? 'Tepat Waktu' : 'Terlambat';
+    console.log('status lapharr', status);
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
     const pdfName = `${Date.now()}-Lap-${noProyek}-lapharian.pdf`;
@@ -897,9 +898,9 @@ const editDetailLapHarian = async (req, res) => {
     await pool.query(qDelLaphar);
 
     // // UNCOMMENT JIKA CREATED AT DAPAT BERUBAH SESUAI DENGAN TANGGAL EDITNYA
-    const currDate = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+    const currDate = new Date().getTime();
     const tglLap = Date.parse(tgl);
-    const status = tglLap < currDate ? 'Tepat Waktu' : 'Terlambat';
+    const status = tglLap <= currDate ? 'Tepat Waktu' : 'Terlambat';
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
     // const pdfName = `${Date.now()}-lap-${rGetLap.rows[0].no_proyek}-harian.pdf`;
