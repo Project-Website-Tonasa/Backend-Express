@@ -551,7 +551,7 @@ const createLapHarian = async (req, res) => {
 
     const currDate = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
     const tglLap = Date.parse(tgl);
-    const status = tglLap < currDate ? 'Tepat Waktu' : 'Terlambat';
+    const status = tglLap <= currDate ? 'Tepat Waktu' : 'Terlambat';
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
     const pdfName = `${Date.now()}-Lap-${noProyek}-lapharian.pdf`;
