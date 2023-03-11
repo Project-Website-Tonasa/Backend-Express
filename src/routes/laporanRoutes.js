@@ -21,7 +21,7 @@ router.put('/laporanReview/edit/:id', [authJwt.verifyToken, authJwt.isAdminOrSta
 router.delete('/laporan/:id', [authJwt.verifyToken, authJwt.isAdminOrStaff], laporanHandler.deleteLaporan);
 router.put('/bast/:noProyek', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], laporanHandler.updateBastStatus);
 router.get('/download/:name', [authJwt.verifyToken, authJwt.isAdminOrStaff], laporanHandler.download);
-router.get('/preview/:name', [authJwt.verifyToken, authJwt.isAdminOrStaff], laporanHandler.previewPdf);
+router.get('/preview/:name', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], laporanHandler.previewPdf);
 // router.get('/testingpup', pup.test);
 
 module.exports = router;

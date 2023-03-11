@@ -66,6 +66,11 @@ const resAllLap = (data) => {
 };
 
 const resLap = (data) => {
+  const options = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  };
   let objData = data.map((obj) => (!obj.catatan ? {
     ...obj,
     catatan: '-',
@@ -79,6 +84,14 @@ const resLap = (data) => {
   objData = objData.map((obj) => (!obj.stat_laphar ? {
     ...obj,
     stat_laphar: '',
+  } : obj));
+  objData = data.map((obj) => (typeof (obj.id) === 'number' ? {
+    ...obj,
+    created_at: (obj.created_at).toLocaleString('id-ID', options),
+  } : obj));
+  objData = objData.map((obj) => (!obj.catatan ? {
+    ...obj,
+    catatan: '-',
   } : obj));
   return objData;
 };
@@ -149,7 +162,7 @@ const getLaporanByNoProyekKont = async (req, res) => {
 
     let qFilter;
     if (!search) {
-      qFilter = `SELECT l.id, l.jenis_laporan, l.urutan_lap, l.catatan, l.status, d.nm_rekanan, d.no_proyek, d.nm_proyek, lh.status AS stat_laphar FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum LEFT JOIN lap_harian AS lh ON l.id = lh.id_laporan WHERE d.no_proyek = '${noProyek}' ORDER BY LOWER(d.no_proyek) ASC`;
+      qFilter = `SELECT l.id, l.created_at, l.jenis_laporan, l.urutan_lap, l.catatan, l.status, d.nm_rekanan, d.no_proyek, d.nm_proyek, lh.status AS stat_laphar FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum LEFT JOIN lap_harian AS lh ON l.id = lh.id_laporan WHERE d.no_proyek = '${noProyek}' ORDER BY LOWER(d.no_proyek) ASC`;
     } else {
       qFilter = `SELECT l.id, l.jenis_laporan, l.urutan_lap, l.catatan, l.status, d.nm_rekanan, d.no_proyek, d.nm_proyek, lh.status AS stat_laphar FROM laporan AS l INNER JOIN data AS d ON l.id_datum = d.id_datum LEFT JOIN lap_harian AS lh ON l.id = lh.id_laporan WHERE LOWER(l.jenis_laporan) LIKE LOWER('%${search}%') OR LOWER(d.nm_proyek) LIKE LOWER('%${search}%') OR LOWER(nama_vendor) LIKE LOWER('%${search}%') AND d.no_proyek = '${noProyek}' ORDER BY LOWER(d.no_proyek) ASC`;
     }
@@ -672,6 +685,9 @@ const createLapHarian = async (req, res) => {
       console.log('ini id', rLap.rows[0].id);
       const data = await fetchData(rLap.rows[0].id, token);
       console.log('dataa', data);
+      if (!data) {
+        throw new NotFoundError('Data undefined');
+      }
       const browser = await puppeteer.launch();
       const page = await browser.newPage();
 
@@ -837,8 +853,8 @@ const getDetailLapHarian = async (req, res) => {
 };
 
 const editDetailLapHarian = async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
     const {
       tgl,
       aktivitas, rencana, note, jabatanhrini, jmlhhrini,
@@ -882,10 +898,10 @@ const editDetailLapHarian = async (req, res) => {
     const status = tglLap < currDate ? 'Tepat Waktu' : 'Terlambat';
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
-    const pdfName = `${Date.now()}-lap-${rGetLap.rows[0].no_proyek}-harian.pdf`;
+    // const pdfName = `${Date.now()}-lap-${rGetLap.rows[0].no_proyek}-harian.pdf`;
     const qUpdateLap = {
-      text: "UPDATE laporan SET created_at= $1, file = $2, status = 'Ditinjau' WHERE id = $3 RETURNING *",
-      values: [createdAt, pdfName, id],
+      text: "UPDATE laporan SET created_at= $1, status = 'Ditinjau' WHERE id = $2 RETURNING *",
+      values: [createdAt, id],
     };
     // const poolLap = await pool.query(qUpdateLap);
     await pool.query(qUpdateLap);
@@ -969,7 +985,7 @@ const editDetailLapHarian = async (req, res) => {
     const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
     fs.unlink(directoryPath + rGetLap.rows[0].file, (err) => {
       if (err) {
-        throw new NotFoundError('File tidak ditemukan');
+        console.log('file tidak ditemukan');
       }
       console.log('deleted');
     });
@@ -986,13 +1002,16 @@ const editDetailLapHarian = async (req, res) => {
       // console.log('ini datanyaa', data.data);
       console.log('ini id', id);
       const data = await fetchData(id, token);
+      if (!data) {
+        throw new NotFoundError('Data undefined');
+      }
       console.log('dataa', data);
       const browser = await puppeteer.launch();
       const page = await browser.newPage();
 
       const content = await compilehtml(data);
       await page.setContent(content);
-      const pdfPath = path.join(process.cwd(), 'resources\\', `${pdfName}`);
+      const pdfPath = path.join(process.cwd(), 'resources\\', `${rGetLap.rows[0].file}`);
       await page.pdf({
         path: pdfPath,
         format: 'A4',
@@ -1007,11 +1026,16 @@ const editDetailLapHarian = async (req, res) => {
     return res.status(201).send({
       status: 'success',
       message: 'laporan has been created successfully',
-      url: `${baseUrl}/preview${pdfName}`,
+      url: `${baseUrl}/preview${rGetLap.rows[0].file}`,
     });
   } catch (e) {
     console.error(e);
-
+    const qUpdateLap = {
+      text: "UPDATE laporan SET status = 'Revisi' WHERE id = $1 RETURNING *",
+      values: [id],
+    };
+    // const poolLap = await pool.query(qUpdateLap);
+    await pool.query(qUpdateLap);
     if (e instanceof ClientError) {
       return res.status(400).send({
         status: 'fail',
