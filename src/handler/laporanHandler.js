@@ -93,6 +93,10 @@ const resLap = (data) => {
     ...obj,
     catatan: '-',
   } : obj));
+  objData = objData.map((obj) => (obj.urutan_lap ? {
+    ...obj,
+    jenis_laporan: `${obj.jenis_laporan} ke-${obj.urutan_lap}`,
+  } : obj));
   return objData;
 };
 
