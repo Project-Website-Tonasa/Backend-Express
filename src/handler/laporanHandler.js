@@ -267,7 +267,7 @@ const updateLaporan = async (req, res) => {
     await pool.query(query);
     fs.unlink(directoryPath + resFile.rows[0].file, (err) => {
       if (err) {
-        throw new NotFoundError('File tidak ditemukan');
+        console.log('File tidak ditemukan');
       }
       console.log('deleted');
     });
@@ -411,7 +411,7 @@ const deleteLaporan = async (req, res) => {
     await pool.query(query);
     fs.unlink(directoryPath + resFile.rows[0].file, (err) => {
       if (err) {
-        throw new NotFoundError('File tidak ditemukan');
+        console.log('File tidak ditemukan');
       }
       console.log('deleted');
     });
