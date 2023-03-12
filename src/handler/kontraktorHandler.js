@@ -5,6 +5,15 @@ const InvariantError = require('../exceptions/invariantError');
 const NotFoundError = require('../exceptions/notFoundError');
 const AuthenticationError = require('../exceptions/authError');
 
+const resLap = (data) => {
+  const objData = data.map((obj) => (!obj.klasifikasi ? {
+    ...obj,
+    klasifikasi: '-',
+  } : obj));
+
+  return objData;
+};
+
 const arraySeparator = (arrData) => {
   let arrDataStr = '';
   for (let i = 0; i < arrData.length; i += 1) {
@@ -74,9 +83,10 @@ const getKontraktorById = async (req, res) => {
       throw new NotFoundError(`Gagal menampilkan data kontraktor. Kontraktor dengan ${id} tidak ditemukan`);
     }
 
+    const data = resLap(result.rows);
     return res.status(200).send({
       status: 'success',
-      data: result.rows,
+      data,
 
     });
   } catch (e) {

@@ -97,6 +97,10 @@ const resLap = (data) => {
     ...obj,
     jenis_laporan: `${obj.jenis_laporan} ke-${obj.urutan_lap}`,
   } : obj));
+  objData = objData.map((obj) => (!obj.stat_laphar ? {
+    ...obj,
+    stat_laphar: '',
+  } : obj));
   return objData;
 };
 
