@@ -29,7 +29,7 @@ const signIn = async (req, res) => {
     }
 
     const token = jwt.sign({ user: result.rows[0].id }, process.env.SECRET, {
-      expiresIn: 300,
+      expiresIn: 600,
     });
 
     const refreshToken = await refreshTokenHandler.createToken(result.rows[0]);
@@ -47,7 +47,7 @@ const signIn = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -91,7 +91,7 @@ const refreshToken = async (req, res) => {
     };
     await pool.query(queryUser);
     const newAccessToken = jwt.sign({ user: result.rows[0].id_user }, process.env.SECRET, {
-      expiresIn: 300,
+      expiresIn: 600,
     });
 
     return res.status(200).json({
@@ -102,7 +102,7 @@ const refreshToken = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -139,7 +139,7 @@ const logOut = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });

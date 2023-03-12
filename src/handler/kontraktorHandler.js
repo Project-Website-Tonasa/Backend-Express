@@ -81,7 +81,7 @@ const getKontraktorById = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -270,7 +270,7 @@ const updateKontraktor = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -304,7 +304,7 @@ const deleteKontraktor = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });

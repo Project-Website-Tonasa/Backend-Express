@@ -75,7 +75,7 @@ const getStaffById = async (req, res) => {
   } catch (e) {
     console.log(e);
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -141,7 +141,7 @@ const createStaff = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -230,7 +230,7 @@ const updateStaff = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });

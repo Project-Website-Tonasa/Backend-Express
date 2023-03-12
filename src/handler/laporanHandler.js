@@ -147,7 +147,7 @@ const createLaporan = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -226,7 +226,7 @@ const getLaporanDetail = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -277,7 +277,7 @@ const updateLaporan = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
@@ -293,6 +293,7 @@ const download = (req, res) => {
   const fileName = req.params.name;
   const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
 
+  // eslint-disable-next-line consistent-return
   res.download(directoryPath + fileName, fileName, (err) => {
     if (err) {
       res.status(500).send({
@@ -367,18 +368,18 @@ const updateStat = async (req, res) => {
     };
     await pool.query(query);
 
-    res.status(201).send({
+    return res.status(201).send({
       status: 'success',
       message: 'status laporan has been updated!',
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
     }
-    res.status(500).send({
+    return res.status(500).send({
       status: 'error',
       message: e.message,
     });
@@ -415,18 +416,18 @@ const deleteLaporan = async (req, res) => {
       console.log('deleted');
     });
 
-    res.status(201).send({
+    return res.status(201).send({
       status: 'success',
       message: 'laporan laporan has been deleted!',
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
     }
-    res.status(500).send({
+    return res.status(500).send({
       status: 'error',
       message: e.message,
     });
@@ -449,7 +450,7 @@ const updateBastStatus = async (req, res) => {
     const result = await pool.query(qUpdateStatus);
 
     if (statusBast === 'Approved') {
-      res.status(201).send({
+      return res.status(201).send({
         status: 'success',
         data: {
           statusBast: result.rows[0].status_bast1,
@@ -457,24 +458,23 @@ const updateBastStatus = async (req, res) => {
           catatanBast: result.rows[0].catatan_bast,
         },
       });
-    } else {
-      res.status(201).send({
-        status: 'success',
-        data: {
-          statusBast: result.rows[0].status_bast1,
-          urlFormBast: null,
-          catatanBast: result.rows[0].catatan_bast,
-        },
-      });
     }
+    return res.status(201).send({
+      status: 'success',
+      data: {
+        statusBast: result.rows[0].status_bast1,
+        urlFormBast: null,
+        catatanBast: result.rows[0].catatan_bast,
+      },
+    });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
     }
-    res.status(500).send({
+    return res.status(500).send({
       status: 'error',
       message: e.message,
     });
@@ -723,7 +723,7 @@ const createLapHarian = async (req, res) => {
     });
   } catch (e) {
     if (e instanceof ClientError) {
-      res.status(e.statusCode).send({
+      return res.status(e.statusCode).send({
         status: 'fail',
         message: e.message,
       });
