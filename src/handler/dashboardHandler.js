@@ -28,7 +28,7 @@ const getProgress = async (req, res) => {
       };
     } else {
       queryGet = {
-        text: "SELECT COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'leading') as leading, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'late') as late, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'on track') as onTrack FROM data as d;",
+        text: "SELECT COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'leading') as leading, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'late') as late, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'on track') as onTrack FROM data as d WHERE LOWER(d.status) = 'in progress';",
       };
     }
     const poolRes = await pool.query(queryGet);
