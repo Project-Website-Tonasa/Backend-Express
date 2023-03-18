@@ -97,6 +97,10 @@ const resLap = (data) => {
     ...obj,
     jenis_laporan: `${obj.jenis_laporan} ke-${obj.urutan_lap}`,
   } : obj));
+  objData = objData.map((obj) => (!obj.stat_laphar ? {
+    ...obj,
+    stat_laphar: '',
+  } : obj));
   return objData;
 };
 
@@ -267,7 +271,7 @@ const updateLaporan = async (req, res) => {
     await pool.query(query);
     fs.unlink(directoryPath + resFile.rows[0].file, (err) => {
       if (err) {
-        throw new NotFoundError('File tidak ditemukan');
+        console.log('File tidak ditemukan');
       }
       console.log('deleted');
     });
@@ -411,7 +415,7 @@ const deleteLaporan = async (req, res) => {
     await pool.query(query);
     fs.unlink(directoryPath + resFile.rows[0].file, (err) => {
       if (err) {
-        throw new NotFoundError('File tidak ditemukan');
+        console.log('File tidak ditemukan');
       }
       console.log('deleted');
     });
