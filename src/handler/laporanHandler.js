@@ -10,7 +10,7 @@ const ClientError = require('../exceptions/clientError');
 const InvariantError = require('../exceptions/invariantError');
 const NotFoundError = require('../exceptions/notFoundError');
 
-const baseUrl = 'http://localhost:3000/';
+const baseUrl = 'https://api.unitworkshopst.com/';
 const compilehtml = async (data) => {
   const filehtml = path.join(process.cwd(), 'resources\\', 'formGeneratePDF.hbs');
   const file = await fse.readFile(filehtml, 'utf8');
@@ -26,7 +26,7 @@ const fetchData = async (idLap, token) => {
     headers: myHeaders,
     redirect: 'follow',
   };
-  const response = await fetch(`http://localhost:3000/detaillapHarian/${idLap}`, setting);
+  const response = await fetch(`${baseUrl}detaillapHarian/${idLap}`, setting);
   // const response = await fetch(url, setting);
   const dataLap = await response.json();
   console.log('ini datanyaa', dataLap.data);
@@ -156,6 +156,7 @@ const createLaporan = async (req, res) => {
         message: e.message,
       });
     }
+    console.log(e.message);
     return res.status(500).send({
       status: 'error',
       message: e.message,
