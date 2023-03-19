@@ -26,7 +26,7 @@ const fetchData = async (idLap, token) => {
     headers: myHeaders,
     redirect: 'follow',
   };
-  const response = await fetch(`http://localhost:3000/detaillapHarian/${idLap}`, setting);
+  const response = await fetch(`${baseUrl}detaillapHarian/${idLap}`, setting);
   // const response = await fetch(url, setting);
   const dataLap = await response.json();
   console.log('ini datanyaa', dataLap.data);
