@@ -1,6 +1,5 @@
 const { Router } = require('express');
 const laporanHandler = require('../handler/laporanHandler');
-// const pup = require('../handler/testing');
 const uploadFile = require('../middleware/uploadFile');
 const authJwt = require('../middleware/authUser');
 
@@ -22,6 +21,5 @@ router.delete('/laporan/:id', [authJwt.verifyToken, authJwt.isAdminOrStaff], lap
 router.put('/bast/:noProyek', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], laporanHandler.updateBastStatus);
 router.get('/download/:name', [authJwt.verifyToken, authJwt.isAdminOrStaff], laporanHandler.download);
 router.get('/preview/:name', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], laporanHandler.previewPdf);
-// router.post('/testing', pup.testing);
 
 module.exports = router;

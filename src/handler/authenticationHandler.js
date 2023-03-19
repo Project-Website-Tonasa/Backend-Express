@@ -46,6 +46,7 @@ const signIn = async (req, res) => {
       refreshToken,
     });
   } catch (e) {
+    console.log(e);
     if (e instanceof ClientError) {
       return res.status(e.statusCode).send({
         status: 'fail',
