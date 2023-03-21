@@ -1035,7 +1035,7 @@ const editDetailLapHarian = async (req, res) => {
     return res.status(201).send({
       status: 'success',
       message: 'laporan has been created successfully',
-      url: `${baseUrl}/preview${rGetLap.rows[0].file}`,
+      url: `${baseUrl}preview/${rGetLap.rows[0].file}`,
     });
   } catch (e) {
     console.error(e);
