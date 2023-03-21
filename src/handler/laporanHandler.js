@@ -66,6 +66,11 @@ const resAllLap = (data) => {
 };
 
 const resLap = (data) => {
+  const options = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  };
   let objData = data.map((obj) => (!obj.catatan ? {
     ...obj,
     catatan: '-',
@@ -83,6 +88,10 @@ const resLap = (data) => {
   objData = objData.map((obj) => (!obj.catatan ? {
     ...obj,
     catatan: '-',
+  } : obj));
+  objData = objData.map((obj) => (obj.created_at ? {
+    ...obj,
+    created_at: (obj.created_at).toLocaleString('id-ID', options),
   } : obj));
   objData = objData.map((obj) => (!obj.stat_laphar ? {
     ...obj,
@@ -447,7 +456,7 @@ const updateBastStatus = async (req, res) => {
         status: 'success',
         data: {
           statusBast: result.rows[0].status_bast1,
-          urlFormBast: 'ini link download bast',
+          urlFormBast: `${baseUrl}download/beritaAcara.docx`,
           catatanBast: result.rows[0].catatan_bast,
         },
       });
@@ -461,6 +470,7 @@ const updateBastStatus = async (req, res) => {
       },
     });
   } catch (e) {
+    console.log(e.message);
     if (e instanceof ClientError) {
       return res.status(e.statusCode).send({
         status: 'fail',
