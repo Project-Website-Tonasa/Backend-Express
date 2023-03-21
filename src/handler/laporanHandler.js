@@ -239,7 +239,7 @@ const updateLaporan = async (req, res) => {
     if (!namaFile) {
       throw new InvariantError('File harus diisi');
     }
-    const directoryPath = path.join(__dirname, '..', '..', 'resources');
+    const directoryPath = path.join(__dirname, '..', '..', 'resources/');
 
     const qFile = {
       text: `SELECT file, status, id FROM laporan WHERE id = ${id}`,
@@ -284,7 +284,7 @@ const updateLaporan = async (req, res) => {
 
 const download = (req, res) => {
   const fileName = req.params.name;
-  const directoryPath = path.join(__dirname, '..', '..', 'resources');
+  const directoryPath = path.join(__dirname, '..', '..', 'resources/');
 
   // eslint-disable-next-line consistent-return
   res.download(directoryPath + fileName, fileName, (err) => {
@@ -382,7 +382,7 @@ const updateStat = async (req, res) => {
 const deleteLaporan = async (req, res) => {
   try {
     const { id } = req.params;
-    const directoryPath = path.join(__dirname, '..', '..', 'resources');
+    const directoryPath = path.join(__dirname, '..', '..', 'resources/');
 
     if (!id || Number.isNaN(Number(id))) {
       throw new InvariantError('Gagal menghapus laporan. Mohon isi id laporan dengan benar');
@@ -987,7 +987,7 @@ const editDetailLapHarian = async (req, res) => {
     } catch (e) {
       throw new InvariantError(e);
     }
-    const directoryPath = path.join(__dirname, '..', '..', 'resources');
+    const directoryPath = path.join(__dirname, '..', '..', 'resources/');
     fs.unlink(directoryPath + rGetLap.rows[0].file, (err) => {
       if (err) {
         console.log('file tidak ditemukan');
