@@ -12,7 +12,7 @@ const NotFoundError = require('../exceptions/notFoundError');
 
 const baseUrl = 'https://api.unitworkshopst.com/';
 const compilehtml = async (data) => {
-  const filehtml = path.join(process.cwd(), 'resources\\', 'formGeneratePDF.hbs');
+  const filehtml = path.join(process.cwd(), 'resources', 'formGeneratePDF.hbs');
   const file = await fse.readFile(filehtml, 'utf8');
 
   return hbs.compile(file)(data);
@@ -239,7 +239,7 @@ const updateLaporan = async (req, res) => {
     if (!namaFile) {
       throw new InvariantError('File harus diisi');
     }
-    const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
+    const directoryPath = path.join(__dirname, '..', '..', 'resources');
 
     const qFile = {
       text: `SELECT file, status, id FROM laporan WHERE id = ${id}`,
@@ -284,7 +284,7 @@ const updateLaporan = async (req, res) => {
 
 const download = (req, res) => {
   const fileName = req.params.name;
-  const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
+  const directoryPath = path.join(__dirname, '..', '..', 'resources');
 
   // eslint-disable-next-line consistent-return
   res.download(directoryPath + fileName, fileName, (err) => {
@@ -382,7 +382,7 @@ const updateStat = async (req, res) => {
 const deleteLaporan = async (req, res) => {
   try {
     const { id } = req.params;
-    const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
+    const directoryPath = path.join(__dirname, '..', '..', 'resources');
 
     if (!id || Number.isNaN(Number(id))) {
       throw new InvariantError('Gagal menghapus laporan. Mohon isi id laporan dengan benar');
@@ -477,7 +477,7 @@ const updateBastStatus = async (req, res) => {
 const previewPdf = (req, res) => {
   const fileName = req.params.name;
   // eslint-disable-next-line consistent-return
-  fs.readFile(path.join(__dirname, '..', '..', 'resources\\', `${fileName}`), (err, data) => {
+  fs.readFile(path.join(__dirname, '..', '..', 'resources', `${fileName}`), (err, data) => {
     if (err) {
       console.log(err.message);
       return res.send(err.message);
@@ -698,7 +698,7 @@ const createLapHarian = async (req, res) => {
 
       const content = await compilehtml(data);
       await page.setContent(content);
-      const pdfPath = path.join(process.cwd(), 'resources\\', `${pdfName}`);
+      const pdfPath = path.join(process.cwd(), 'resources', `${pdfName}`);
       await page.pdf({
         path: pdfPath,
         format: 'A4',
@@ -987,7 +987,7 @@ const editDetailLapHarian = async (req, res) => {
     } catch (e) {
       throw new InvariantError(e);
     }
-    const directoryPath = path.join(__dirname, '..', '..', 'resources\\');
+    const directoryPath = path.join(__dirname, '..', '..', 'resources');
     fs.unlink(directoryPath + rGetLap.rows[0].file, (err) => {
       if (err) {
         console.log('file tidak ditemukan');
@@ -1016,7 +1016,7 @@ const editDetailLapHarian = async (req, res) => {
 
       const content = await compilehtml(data);
       await page.setContent(content);
-      const pdfPath = path.join(process.cwd(), 'resources\\', `${rGetLap.rows[0].file}`);
+      const pdfPath = path.join(process.cwd(), 'resources', `${rGetLap.rows[0].file}`);
       await page.pdf({
         path: pdfPath,
         format: 'A4',
