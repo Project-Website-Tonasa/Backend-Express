@@ -692,6 +692,7 @@ const createLapHarian = async (req, res) => {
         throw new NotFoundError('Data undefined');
       }
       const browser = await puppeteer.launch({
+        headless: true,
         args: ['--no-sandbox', '--disabled-setupid-sandbox'],
       });
       const page = await browser.newPage();
@@ -1012,6 +1013,7 @@ const editDetailLapHarian = async (req, res) => {
       }
       console.log('dataa', data);
       const browser = await puppeteer.launch({
+        headless: true,
         args: ['--no-sandbox', '--disabled-setupid-sandbox'],
       });
       const page = await browser.newPage();
