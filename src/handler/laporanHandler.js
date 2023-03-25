@@ -456,7 +456,7 @@ const updateBastStatus = async (req, res) => {
         status: 'success',
         data: {
           statusBast: result.rows[0].status_bast1,
-          urlFormBast: `${baseUrl}download/beritaAcara.docx`,
+          urlFormBast: `${baseUrl}download/BeritaAcara.docx`,
           catatanBast: result.rows[0].catatan_bast,
         },
       });
