@@ -255,8 +255,17 @@ const addDatum = async (req, res) => {
     if (Date.parse(tglMulai) > Date.parse(tglAkhir)) {
       throw new InvariantError('tglMulai tidak boleh lebih duluan daripada tglAkhir');
     }
-    if (Number.isNaN(Number(nilai)) || Array.isArray(nilai)) {
+    if (Number.isNaN(Number(nilai)) || Array.isArray(nilai) || !nilai) {
       throw new InvariantError('Nilai harus berupa integer');
+    }
+    // if (!(namaProyek.match(/^[a-zA-Z0-9  ./']*$/)) && !namaProyek.trim()) {
+    //   throw new InvariantError('Mohon isi Nama Proyek dengan benar');
+    // }
+    if (!namaProyek.trim().length || !(namaProyek.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('Mohon isi Nama Proyek dengan benar. Nama Proyek hanya boleh terdiri atas angka, huruf, beberapa spesial karakter(titik, koma, &, (), \', -)');
+    }
+    if (!namaRekanan.trim().length || !(namaRekanan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('Mohon isi Nama Rekanan dengan benar. Nama Rekanan hanya boleh terdiri atas angka, huruf, beberapa spesial karakter(titik, koma, &, (), \', -)');
     }
 
     const editedAt = new Date(new Date().setHours(0, 0, 0, 0));
