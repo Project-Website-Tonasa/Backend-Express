@@ -90,6 +90,26 @@ const addPko = async (req, res) => {
       statusPko, keterangan, nilaiProject, statusPenagihan,
     } = req.body;
 
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan \'Tahun\' dengan benar');
+    }
+
+    if (!pekerjaan || !pekerjaan.trim().length || !(pekerjaan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('Mohon isi kolom pekerjaan dengan benar. Kolom Pekerjaan hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)');
+    }
+
+    if (tglMulai && !Date.parse(tglMulai)) {
+      throw new InvariantError('Masukkan \'Tanggal Mulai\' dengan benar.');
+    }
+
+    if (targetSelesai && !Date.parse(targetSelesai)) {
+      throw new InvariantError('Masukkan \'Target Selesai\' dengan benar.');
+    }
+
+    if (Number.isNaN(Number(nilaiProject)) || Array.isArray(nilaiProject)) {
+      throw new InvariantError('Masukkan \'Nilai Project\' dengan benar. prValprice harus berupa angka.');
+    }
+
     const queryInsert = {
       text: 'INSERT INTO pko (id_pko, tahun, pekerjaan, notifikasi, nomor_po, tgl_mulai, target_selesai, status, keterangan, nilai_project, status_penagihan) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;',
       values: [
@@ -180,6 +200,26 @@ const editPko = async (req, res) => {
       tahun, pekerjaan, notifikasi, nomorPo, tglMulai, targetSelesai,
       statusPko, keterangan, nilaiProject, statusPenagihan,
     } = req.body;
+
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan \'Tahun\' dengan benar');
+    }
+
+    if (!pekerjaan || !pekerjaan.trim().length || !(pekerjaan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('Mohon isi kolom pekerjaan dengan benar. Kolom Pekerjaan hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)');
+    }
+
+    if (tglMulai && !Date.parse(tglMulai)) {
+      throw new InvariantError('Masukkan \'Tanggal Mulai\' dengan benar.');
+    }
+
+    if (targetSelesai && !Date.parse(targetSelesai)) {
+      throw new InvariantError('Masukkan \'Target Selesai\' dengan benar.');
+    }
+
+    if (Number.isNaN(Number(nilaiProject)) || Array.isArray(nilaiProject)) {
+      throw new InvariantError('Masukkan \'Nilai Project\' dengan benar. prValprice harus berupa angka.');
+    }
 
     const queryInsert = {
       text: 'UPDATE pko SET tahun = $1, pekerjaan = $2, notifikasi = $3, nomor_po = $4, tgl_mulai = $5, target_selesai = $6, status = $7, keterangan = $8, nilai_project = $9, status_penagihan = $10 WHERE id_pko = $11 RETURNING *;',
