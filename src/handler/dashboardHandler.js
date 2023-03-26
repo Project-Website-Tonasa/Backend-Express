@@ -209,7 +209,7 @@ const getStatistikPlanVsActual = async (req, res) => {
     if (!(poolRes.rows[0])) {
       throw new NotFoundError(`Data dengan id: ${idDatum} tidak ditemukan`);
     }
-    console.log(poolRes.rows[0]);
+    // console.log(poolRes.rows[0]);
 
     let {
       strplan: stringPlan = [], strreal: stringReal = [],

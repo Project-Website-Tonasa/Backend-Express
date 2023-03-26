@@ -230,13 +230,6 @@ const addDatum = async (req, res) => {
       tglMulai, tglAkhir, nilai, nmKota, nmLokasi, keterangan, klasifikasi, arrPlan, editedBy,
     } = req.body;
 
-    if (!Array.isArray(arrPlan)) {
-      throw new InvariantError('Masukkan array arrPlan dengan benar! Pastikan bertipe array (bukan string)');
-    }
-    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
-      throw new InvariantError('Masukkan tahun dengan benar');
-    }
-
     let nmJenis;
 
     if (noProyek.includes('84', 0)) {
@@ -249,24 +242,36 @@ const addDatum = async (req, res) => {
       throw new InvariantError('Nomor proyek harus diawali dengan 84 atau 86');
     }
 
+    if (!namaProyek.trim().length || !(namaProyek.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('"Mohon isi Nama Proyek dengan benar. Nama Proyek hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)"');
+    }
+
+    if (!namaRekanan.trim().length || !(namaRekanan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('"Mohon isi Nama Rekanan dengan benar. Nama Rekanan hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)"');
+    }
+
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan \'Tahun\' dengan benar');
+    }
+
     if (!Date.parse(tglMulai) || !Date.parse(tglAkhir)) {
-      throw new InvariantError('Invalid Date tglMulai atau tglAkhir');
+      throw new InvariantError('Masukkan \'Tanggal Mulai\' dan \'Tanggal Akhir\' dengan benar.');
     }
     if (Date.parse(tglMulai) > Date.parse(tglAkhir)) {
-      throw new InvariantError('tglMulai tidak boleh lebih duluan daripada tglAkhir');
+      throw new InvariantError('\'Tanggal Akhir\' tidak boleh mendahului \'Tanggal Mulai\'. Pastikan anda memasukkan tanggal dengan benar');
     }
+
     if (Number.isNaN(Number(nilai)) || Array.isArray(nilai) || !nilai) {
-      throw new InvariantError('Nilai harus berupa integer');
+      throw new InvariantError('Masukkan Nilai dengan benar. Nilai harus berupa angka');
     }
+
+    if (!Array.isArray(arrPlan)) {
+      throw new InvariantError('Masukkan array arrPlan dengan benar! Pastikan bertipe array (bukan string)');
+    }
+
     // if (!(namaProyek.match(/^[a-zA-Z0-9  ./']*$/)) && !namaProyek.trim()) {
     //   throw new InvariantError('Mohon isi Nama Proyek dengan benar');
     // }
-    if (!namaProyek.trim().length || !(namaProyek.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
-      throw new InvariantError('Mohon isi Nama Proyek dengan benar. Nama Proyek hanya boleh terdiri atas angka, huruf, beberapa spesial karakter(titik, koma, &, (), \', -)');
-    }
-    if (!namaRekanan.trim().length || !(namaRekanan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
-      throw new InvariantError('Mohon isi Nama Rekanan dengan benar. Nama Rekanan hanya boleh terdiri atas angka, huruf, beberapa spesial karakter(titik, koma, &, (), \', -)');
-    }
 
     const editedAt = new Date(new Date().setHours(0, 0, 0, 0));
 
@@ -392,10 +397,6 @@ const editDatum = async (req, res) => {
       throw new InvariantError('Masukkan array arrPlan dengan benar!');
     }
 
-    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
-      throw new InvariantError('Masukkan tahun dengan benar');
-    }
-
     let nmJenis;
 
     if (noProyek.includes('84', 0)) {
@@ -408,15 +409,27 @@ const editDatum = async (req, res) => {
       throw new InvariantError('Nomor proyek harus diawali dengan 84 atau 86');
     }
 
+    if (!namaProyek.trim().length || !(namaProyek.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('"Mohon isi Nama Proyek dengan benar. Nama Proyek hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)"');
+    }
+
+    if (!namaRekanan.trim().length || !(namaRekanan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('"Mohon isi Nama Rekanan dengan benar. Nama Rekanan hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)"');
+    }
+
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan \'Tahun\' dengan benar');
+    }
+
     if (!Date.parse(tglMulai) || !Date.parse(tglAkhir)) {
-      throw new InvariantError('Invalid Date tglMulai atau tglAkhir');
+      throw new InvariantError('Masukkan \'Tanggal Mulai\' dan \'Tanggal Akhir\' dengan benar.');
     }
     if (Date.parse(tglMulai) > Date.parse(tglAkhir)) {
-      throw new InvariantError('tglMulai tidak boleh lebih duluan daripada tglAkhir');
+      throw new InvariantError('\'Tanggal Akhir\' tidak boleh mendahului \'Tanggal Mulai\'. Pastikan anda memasukkan tanggal dengan benar');
     }
     if (Number.isNaN(Number(nilai)) || Array.isArray(nilai)
-    || Number.isNaN(Number(nilaiTamb)) || Array.isArray(nilaiTamb)) {
-      throw new InvariantError('Nilai dan NilaiTamb harus berupa integer');
+    || !nilai || Number.isNaN(Number(nilaiTamb)) || Array.isArray(nilaiTamb)) {
+      throw new InvariantError('Masukkan Nilai dengan benar. Nilai dan Nilai tambah harus berupa angka.');
     }
 
     const editedAt = new Date(new Date().setHours(0, 0, 0, 0));
