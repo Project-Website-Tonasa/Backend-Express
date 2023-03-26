@@ -559,7 +559,7 @@ const createLapHarian = async (req, res) => {
 
     const currDate = new Date().getTime();
     const tglLap = Date.parse(tgl);
-    const status = tglLap <= currDate ? 'Tepat Waktu' : 'Terlambat';
+    const status = tglLap < currDate ? 'Terlambat' : 'Tepat Waktu';
     console.log('status lapharr', status);
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
@@ -898,6 +898,7 @@ const editDetailLapHarian = async (req, res) => {
       values: [id],
     };
     const rGetLap = await pool.query(qGetLap);
+    console.log('test');
     if (rGetLap.rows[0].status !== 'Revisi') {
       throw new InvariantError('Laporan gagal diperbarui. Status laporan bukan revisi');
     }
@@ -911,7 +912,7 @@ const editDetailLapHarian = async (req, res) => {
     // // UNCOMMENT JIKA CREATED AT DAPAT BERUBAH SESUAI DENGAN TANGGAL EDITNYA
     const currDate = new Date().getTime();
     const tglLap = Date.parse(tgl);
-    const status = tglLap <= currDate ? 'Tepat Waktu' : 'Terlambat';
+    const status = tglLap < currDate ? 'Terlambat' : 'Tepat Waktu';
 
     const createdAt = new Date(new Date().setHours(0, 0, 0, 0));
     // const pdfName = `${Date.now()}-lap-${rGetLap.rows[0].no_proyek}-harian.pdf`;

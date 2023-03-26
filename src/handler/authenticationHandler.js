@@ -94,7 +94,7 @@ const refreshToken = async (req, res) => {
     const newAccessToken = jwt.sign({ user: result.rows[0].id_user }, process.env.SECRET, {
       expiresIn: 600,
     });
-
+    console.log('token baruu:', newAccessToken);
     return res.status(200).json({
       status: 'success',
       message: 'Token updated!',
