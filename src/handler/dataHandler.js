@@ -242,12 +242,12 @@ const addDatum = async (req, res) => {
       throw new InvariantError('Nomor proyek harus diawali dengan 84 atau 86');
     }
 
-    if (!namaProyek.trim().length || !(namaProyek.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
-      throw new InvariantError('"Mohon isi Nama Proyek dengan benar. Nama Proyek hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)"');
+    if (!namaProyek || !namaProyek.trim().length || !(namaProyek.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('Mohon isi Nama Proyek dengan benar. Nama Proyek hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)');
     }
 
-    if (!namaRekanan.trim().length || !(namaRekanan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
-      throw new InvariantError('"Mohon isi Nama Rekanan dengan benar. Nama Rekanan hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)"');
+    if (!namaRekanan || !namaRekanan.trim().length || !(namaRekanan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('Mohon isi Nama Rekanan dengan benar. Nama Rekanan hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)');
     }
 
     if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
@@ -409,11 +409,11 @@ const editDatum = async (req, res) => {
       throw new InvariantError('Nomor proyek harus diawali dengan 84 atau 86');
     }
 
-    if (!namaProyek.trim().length || !(namaProyek.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+    if (!namaProyek || !namaProyek.trim().length || !(namaProyek.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
       throw new InvariantError('"Mohon isi Nama Proyek dengan benar. Nama Proyek hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)"');
     }
 
-    if (!namaRekanan.trim().length || !(namaRekanan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+    if (!namaRekanan || !namaRekanan.trim().length || !(namaRekanan.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
       throw new InvariantError('"Mohon isi Nama Rekanan dengan benar. Nama Rekanan hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)"');
     }
 

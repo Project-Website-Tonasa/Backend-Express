@@ -31,6 +31,22 @@ const addMonitoringPR = async (req, res) => {
       opexCapex, notifikasi, purchaseOrder,
     } = req.body;
 
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan \'Tahun\' dengan benar');
+    }
+
+    if (!Date.parse(prDate)) {
+      throw new InvariantError('Masukkan \'PR Date\' dengan benar.');
+    }
+
+    if (!prNumber || !(prNumber.match(/^[0-9]*$/))) {
+      throw new InvariantError('Mohon isi PR Number dengan benar. PR Number hanya berupa angka saja');
+    }
+
+    if (!description || !description.trim().length || !(description.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('Mohon isi description dengan benar. Description hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)');
+    }
+
     let pic;
     if (collStatus === 'PO') {
       pic = 'KONSTRUKSI';
@@ -42,6 +58,10 @@ const addMonitoringPR = async (req, res) => {
       pic = 'PENGADAAN';
     } else {
       throw new InvariantError('Gagal Menambahkan data. Mohon isi coll Status dengan benar.');
+    }
+
+    if (Number.isNaN(Number(prValprice)) || Array.isArray(prValprice)) {
+      throw new InvariantError('Masukkan prValprice dengan benar. prValprice harus berupa angka.');
     }
 
     const queryInsert = {
@@ -187,6 +207,22 @@ const editMonPr = async (req, res) => {
       opexCapex, notifikasi, purchaseOrder,
     } = req.body;
 
+    if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
+      throw new InvariantError('Masukkan \'Tahun\' dengan benar');
+    }
+
+    if (!Date.parse(prDate)) {
+      throw new InvariantError('Masukkan \'PR Date\' dengan benar.');
+    }
+
+    if (!prNumber || !(prNumber.match(/^[0-9]*$/))) {
+      throw new InvariantError('Mohon isi PR Number dengan benar. PR Number hanya berupa angka saja');
+    }
+
+    if (!description || !description.trim().length || !(description.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
+      throw new InvariantError('Mohon isi description dengan benar. Description hanya boleh terdiri atas angka, huruf, atau beberapa spesial karakter(. , & () \' -)');
+    }
+
     let pic;
     if (collStatus === 'PO') {
       pic = 'KONSTRUKSI';
@@ -198,6 +234,10 @@ const editMonPr = async (req, res) => {
       pic = 'PENGADAAN';
     } else {
       throw new InvariantError('Gagal Menambahkan data. Mohon isi coll Status dengan benar.');
+    }
+
+    if (Number.isNaN(Number(prValprice)) || Array.isArray(prValprice)) {
+      throw new InvariantError('Masukkan prValprice dengan benar. prValprice harus berupa angka.');
     }
 
     const queryInsert = {
