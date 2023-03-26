@@ -40,7 +40,7 @@ const addMonitoringPR = async (req, res) => {
     }
 
     if (!prNumber || !(prNumber.match(/^[0-9]*$/))) {
-      throw new InvariantError('Mohon isi PR Number dengan benar. PR Number hanya berupa angka saja');
+      throw new InvariantError('Mohon isi PR Number dengan benar');
     }
 
     if (!description || !description.trim().length || !(description.match(/^[a-zA-Z0-9  .,/()&'-]*$/))) {
