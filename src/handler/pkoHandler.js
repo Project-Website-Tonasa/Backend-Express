@@ -89,8 +89,6 @@ const addPko = async (req, res) => {
       tahun, pekerjaan, notifikasi, nomorPo, tglMulai, targetSelesai,
       statusPko, keterangan, nilaiProject, statusPenagihan,
     } = req.body;
-    console.log('ADD PKO----');
-    console.log(req.body);
 
     if (!Number(tahun) || Array.isArray(tahun) || tahun.toString().length !== 4) {
       throw new InvariantError('Masukkan \'Tahun\' dengan benar');
