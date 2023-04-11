@@ -202,29 +202,48 @@ const updateKontraktor = async (req, res) => {
       throw new InvariantError('Gagal mengubah data kontraktor. Akun ini bukan role kontraktor atau akun tidak ditemukan');
     }
 
-    const noProyekStr = arraySeparator(noProyek);
-    const qGetData = {
-      text: `SELECT id_datum, no_proyek FROM data WHERE no_proyek in (${noProyekStr}) ORDER BY id_datum ASC`,
-    };
-    const resData = await pool.query(qGetData);
-    const idDatum = [];
-    for (let i = 0; i < noProyek.length; i += 1) {
-      if (!resData.rows[i]) {
-        throw new InvariantError(`noProyek ${noProyek[i]} tidak valid`);
+    if (noProyek) {
+      const noProyekStr = arraySeparator(noProyek);
+      const qGetData = {
+        text: `SELECT id_datum, no_proyek FROM data WHERE no_proyek in (${noProyekStr}) ORDER BY id_datum ASC`,
+      };
+      const resData = await pool.query(qGetData);
+      const idDatum = [];
+      for (let i = 0; i < noProyek.length; i += 1) {
+        if (!resData.rows[i]) {
+          throw new InvariantError(`noProyek ${noProyek[i]} tidak valid`);
+        }
+        idDatum.push(resData.rows[i].id_datum);
       }
-      idDatum.push(resData.rows[i].id_datum);
-    }
-
-    const arrIdStr = arraySeparator(idDatum);
-    const qGetKon = {
-      text: `SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE k.id_datum in (${arrIdStr}) ORDER BY id_datum ASC`,
-    };
-    const resKon = await pool.query(qGetKon);
-    for (let i = 0; i < resKon.rows.length; i += 1) {
-      // eslint-disable-next-line radix
-      if (resKon.rows[i].id_user !== parseInt(id) && resKon.rows[i]) {
-        throw new InvariantError(`Gagal mengubah data kontraktor. noProyek ${resKon.rows[i].no_proyek} telah digunakan di akun kontraktor lain`);
+      const arrIdStr = arraySeparator(idDatum);
+      const qGetKon = {
+        text: `SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE k.id_datum in (${arrIdStr}) ORDER BY id_datum ASC`,
+      };
+      const resKon = await pool.query(qGetKon);
+      for (let i = 0; i < resKon.rows.length; i += 1) {
+        // eslint-disable-next-line radix
+        if (resKon.rows[i].id_user !== parseInt(id) && resKon.rows[i]) {
+          throw new InvariantError(`Gagal mengubah data kontraktor. noProyek ${resKon.rows[i].no_proyek} telah digunakan di akun kontraktor lain`);
+        }
       }
+      const qDelKontrak = {
+        text: 'DELETE FROM kontraktor_conn WHERE id_user = $1',
+        values: [id],
+      };
+      await pool.query(qDelKontrak);
+      const promises = [];
+      let qNoKontrak;
+      for (let i = 0; i < resData.rows.length; i += 1) {
+        qNoKontrak = {
+          text: 'INSERT INTO kontraktor_conn (id, id_datum, id_user) VALUES (DEFAULT, $1, $2)',
+          values: [
+            resData.rows[i].id_datum,
+            id,
+          ],
+        };
+        promises.push(pool.query(qNoKontrak));
+      }
+      await Promise.all(promises);
     }
 
     const qUpUsername = {
@@ -232,26 +251,6 @@ const updateKontraktor = async (req, res) => {
       values: [username, id],
     };
     await pool.query(qUpUsername);
-
-    const qDelKontrak = {
-      text: 'DELETE FROM kontraktor_conn WHERE id_user = $1',
-      values: [id],
-    };
-    await pool.query(qDelKontrak);
-
-    const promises = [];
-    let qNoKontrak;
-    for (let i = 0; i < resData.rows.length; i += 1) {
-      qNoKontrak = {
-        text: 'INSERT INTO kontraktor_conn (id, id_datum, id_user) VALUES (DEFAULT, $1, $2)',
-        values: [
-          resData.rows[i].id_datum,
-          id,
-        ],
-      };
-      promises.push(pool.query(qNoKontrak));
-    }
-    await Promise.all(promises);
 
     if (oldPass && newPass && confirmNewPass) {
       const passwordIsValid = bcrypt.compareSync(
@@ -285,6 +284,7 @@ const updateKontraktor = async (req, res) => {
         message: e.message,
       });
     }
+    console.log(e);
     return res.status(500).send({
       status: 'error',
       message: e.message,
