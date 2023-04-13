@@ -8,6 +8,6 @@ router.post('/kontraktor/tambah', [authJwt.verifyToken, authJwt.isAdminOrStaff],
 router.get('/kontraktor', [authJwt.verifyToken, authJwt.isAdminOrStaff], kontraktorHandler.getAllKontraktor);
 router.get('/kontraktor/:id', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], kontraktorHandler.getKontraktorById);
 router.delete('/kontraktor/:id', [authJwt.verifyToken, authJwt.isAdminOrStaff], kontraktorHandler.deleteKontraktor);
-router.put('/kontraktor/:id', kontraktorHandler.updateKontraktor);
+router.put('/kontraktor/:id', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], kontraktorHandler.updateKontraktor);
 
 module.exports = router;
