@@ -18,17 +18,22 @@ const getData = async (req, res) => {
 
 const getProgress = async (req, res) => {
   try {
-    const { idUser } = req.query;
+    const { tahun, idUser } = req.query;
+
+    if (!tahun || Number.isNaN(Number(tahun))) {
+      throw new InvariantError('Gagal mengambil data status proyek. Mohon isi tahun project dengan benar');
+    }
 
     let queryGet;
     if (idUser) {
       queryGet = {
-        text: "SELECT COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'leading') as leading, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'late') as late, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'on track') as onTrack FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE k.id_user= $1;",
-        values: [idUser],
+        text: "SELECT COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'leading') as leading, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'late') as late, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'on track') as onTrack FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE k.id_user= $1, LOWER(d.status) = 'in progress' AND d.tahun = $2;",
+        values: [idUser, tahun],
       };
     } else {
       queryGet = {
-        text: "SELECT COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'leading') as leading, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'late') as late, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'on track') as onTrack FROM data as d WHERE LOWER(d.status) = 'in progress';",
+        text: "SELECT COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'leading') as leading, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'late') as late, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'on track') as onTrack FROM data as d WHERE LOWER(d.status) = 'in progress' AND d.tahun = $1;",
+        values: [tahun],
       };
     }
     const poolRes = await pool.query(queryGet);
@@ -56,34 +61,41 @@ const getProgress = async (req, res) => {
 
 const getListProyekByProgress = async (req, res) => {
   try {
-    const { idUser } = req.query;
+    const { idUser, tahun } = req.query;
 
     let queryGetLeading;
     let queryGetLate;
     let queryGetOnTrack;
 
+    if (!tahun || Number.isNaN(Number(tahun))) {
+      throw new InvariantError('Gagal mengambil daftar nama proyek. Mohon isi tahun dengan benar');
+    }
+
     if (idUser) {
       queryGetLeading = {
-        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'leading' AND k.id_user= $1;",
-        values: [idUser],
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'leading' AND k.id_user= $1 AND d.tahun = $2;",
+        values: [idUser, tahun],
       };
       queryGetLate = {
-        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'late' AND k.id_user= $1;",
-        values: [idUser],
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'late' AND k.id_user= $1 ANd d.tahun = $2;",
+        values: [idUser, tahun],
       };
       queryGetOnTrack = {
-        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'on track' AND k.id_user= $1;",
-        values: [idUser],
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'on track' AND k.id_user= $1 AND d.tahun = $2;",
+        values: [idUser, tahun],
       };
     } else {
       queryGetLeading = {
-        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'leading';",
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'leading' AND tahun = $1;",
+        values: [tahun],
       };
       queryGetLate = {
-        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'late';",
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'late' AND tahun = $1;",
+        values: [tahun],
       };
       queryGetOnTrack = {
-        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'on track';",
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'on track' AND tahun = $1",
+        values: [tahun],
       };
     }
     const poolLeading = await pool.query(queryGetLeading);
@@ -100,6 +112,78 @@ const getListProyekByProgress = async (req, res) => {
         leading,
         late,
         onTrack,
+      },
+    });
+  } catch (e) {
+    console.log(e);
+
+    if (e instanceof ClientError) {
+      return res.status(400).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+
+    return res.status(500).send({
+      status: 'error',
+      message: 'Gagal mengambil data',
+    });
+  }
+};
+
+const getListProyekByStatus = async (req, res) => {
+  try {
+    const { idUser, tahun } = req.query;
+
+    let queryGetCompleted;
+    let queryGetPreparing;
+    let queryGetInProgress;
+
+    if (!tahun || Number.isNaN(Number(tahun))) {
+      throw new InvariantError('Gagal mengambil daftar nama proyek. Mohon isi tahun dengan benar');
+    }
+
+    if (idUser) {
+      queryGetCompleted = {
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.status) = 'completed' AND k.id_user= $1 AND d.tahun = $2;",
+        values: [idUser, tahun],
+      };
+      queryGetPreparing = {
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.status) = 'preparing' AND k.id_user= $1 AND d.tahun = $2;",
+        values: [idUser, tahun],
+      };
+      queryGetInProgress = {
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.status) = 'in progress' AND k.id_user= $1 AND d.tahun = $2;",
+        values: [idUser, tahun],
+      };
+    } else {
+      queryGetCompleted = {
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.status) = 'completed' AND tahun = $1;",
+        values: [tahun],
+      };
+      queryGetPreparing = {
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.status) = 'preparing' AND tahun = $1;",
+        values: [tahun],
+      };
+      queryGetInProgress = {
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.status) = 'in progress' AND tahun = $1;",
+        values: [tahun],
+      };
+    }
+    const poolCompleted = await pool.query(queryGetCompleted);
+    const poolPreparing = await pool.query(queryGetPreparing);
+    const poolInProgress = await pool.query(queryGetInProgress);
+
+    const completed = poolCompleted.rows;
+    const preparing = poolPreparing.rows;
+    const inProgress = poolInProgress.rows;
+
+    return res.status(200).send({
+      status: 'success',
+      data: {
+        completed,
+        preparing,
+        inProgress,
       },
     });
   } catch (e) {
@@ -382,4 +466,5 @@ module.exports = {
   getStatistikPko,
   getProgress,
   getListProyekByProgress,
+  getListProyekByStatus,
 };

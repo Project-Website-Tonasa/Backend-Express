@@ -11,5 +11,6 @@ router.get('/stat/picpr', [authJwt.verifyToken, authJwt.isAdminOrStaff], dashboa
 router.get('/stat/pko', [authJwt.verifyToken, authJwt.isAdminOrStaff], dashboardHandler.getStatistikPko);
 router.get('/stat/progress', [authJwt.verifyToken, authJwt.isAdminOrStaff], dashboardHandler.getProgress);
 router.get('/stat/progress/listproyek', [authJwt.verifyToken, authJwt.isAdminOrStaff], dashboardHandler.getListProyekByProgress);
+router.get('/stat/data/listproyek', [authJwt.verifyToken, authJwt.isAdminOrStaff], dashboardHandler.getListProyekByStatus);
 
 module.exports = router;

@@ -5,17 +5,22 @@ const NotFoundError = require('../exceptions/notFoundError');
 
 const dropdownProyek = async (req, res) => {
   try {
-    const { idUser } = req.query;
+    const { tahun, idUser } = req.query;
+
+    if (!tahun || Number.isNaN(Number(tahun))) {
+      throw new InvariantError('Gagal mengambil daftar nama proyek. Mohon isi tahun dengan benar');
+    }
     let queryGet;
 
     if (idUser) {
       queryGet = {
-        text: 'SELECT d.id_datum, d.nm_proyek FROM data AS d INNER JOIN kontraktor_conn AS kontraktor ON d.id_datum = kontraktor.id_datum WHERE id_user = $1',
-        values: [idUser],
+        text: 'SELECT d.id_datum, d.nm_proyek FROM data AS d INNER JOIN kontraktor_conn AS kontraktor ON d.id_datum = kontraktor.id_datum WHERE id_user = $1 AND tahun = $2',
+        values: [idUser, tahun],
       };
     } else {
       queryGet = {
-        text: 'SELECT id_datum, nm_proyek FROM data',
+        text: 'SELECT id_datum, nm_proyek FROM data WHERE tahun = $1',
+        values: [tahun],
       };
     }
 
@@ -30,6 +35,14 @@ const dropdownProyek = async (req, res) => {
     });
   } catch (e) {
     console.error(e);
+
+    if (e instanceof ClientError) {
+      return res.status(400).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    // console.error(e);
     return res.status(500).send({
       status: 'error',
       message: 'Gagal mengambil data',
