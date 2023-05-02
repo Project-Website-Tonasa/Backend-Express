@@ -42,7 +42,7 @@ const getPko = async (req, res) => {
       const offset = (currentPage - 1) * pageSize;
 
       const queryGet = {
-        text: `SELECT * FROM pko ORDER BY id_pko LIMIT ${pageSize} OFFSET ${offset}`,
+        text: `SELECT * FROM pko ORDER BY tahun, pekerjaan LIMIT ${pageSize} OFFSET ${offset}`,
       };
       const data = await pool.query(queryGet);
 
@@ -63,7 +63,7 @@ const getPko = async (req, res) => {
 
     // TANPA PAGINATION
     const queryGet = {
-      text: 'SELECT * FROM pko ORDER BY id_pko',
+      text: 'SELECT * FROM pko ORDER BY tahun, pekerjaan',
     };
     const data = await pool.query(queryGet);
 

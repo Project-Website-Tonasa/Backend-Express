@@ -178,7 +178,7 @@ const getData = async (req, res) => {
       const totalPages = Math.ceil(totalRows.rows[0].count / pageSize);
       const offset = (currentPage - 1) * pageSize;
       const queryGet = {
-        text: `SELECT * FROM data ORDER BY id_datum LIMIT ${pageSize} OFFSET ${offset}`,
+        text: `SELECT * FROM data ORDER BY tahun, nm_proyek LIMIT ${pageSize} OFFSET ${offset}`,
       };
       const dataRes = await pool.query(queryGet);
       const data = dataRes.rows;
@@ -201,7 +201,7 @@ const getData = async (req, res) => {
 
     /// TANPA PAGINATION
     const queryGet = {
-      text: 'SELECT * FROM data order by id_datum',
+      text: 'SELECT * FROM data order by tahun, nm_proyek',
     };
     const dataRes = await pool.query(queryGet);
     const data = dataRes.rows;
