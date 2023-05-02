@@ -114,7 +114,7 @@ const getMonitoringPR = async (req, res) => {
       const offset = (currentPage - 1) * pageSize;
 
       const queryGet = {
-        text: `SELECT * FROM monitoring_pr ORDER BY id_monitor LIMIT ${pageSize} OFFSET ${offset}`,
+        text: `SELECT * FROM monitoring_pr ORDER BY tahun, description LIMIT ${pageSize} OFFSET ${offset}`,
       };
       const data = await pool.query(queryGet);
 
@@ -135,7 +135,7 @@ const getMonitoringPR = async (req, res) => {
 
     // TANPA PAGINATION
     const queryGet = {
-      text: 'SELECT * FROM monitoring_pr ORDER BY id_monitor',
+      text: 'SELECT * FROM monitoring_pr ORDER BY tahun, description',
     };
     const data = await pool.query(queryGet);
 
