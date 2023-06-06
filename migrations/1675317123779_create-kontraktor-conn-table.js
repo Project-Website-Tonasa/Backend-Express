@@ -11,7 +11,7 @@ exports.up = ((pgm) => {
     },
     id_datum: {
       type: 'INTEGER',
-      notNull: true,
+      notNull: false,
     },
   });
   pgm.addConstraint(
