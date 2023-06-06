@@ -672,6 +672,7 @@ const createLapHarian = async (req, res) => {
         text: 'DELETE FROM laporan WHERE id = $1;',
         values: [rLap.rows[0].id],
       };
+      console.log(e.message);
       await pool.query(qDelLaphar);
       throw new InvariantError(e);
     }
@@ -719,6 +720,7 @@ const createLapHarian = async (req, res) => {
       console.log('success');
       await browser.close();
     } catch (e) {
+      console.log(e.message);
       const qDelLaphar = {
         text: 'DELETE FROM laporan WHERE id = $1;',
         values: [rLap.rows[0].id],
@@ -733,6 +735,7 @@ const createLapHarian = async (req, res) => {
       url: `${baseUrl}preview/${pdfName}`,
     });
   } catch (e) {
+    console.log(e.message);
     if (e instanceof ClientError) {
       return res.status(e.statusCode).send({
         status: 'fail',
@@ -1069,7 +1072,21 @@ const editDetailLapHarian = async (req, res) => {
   }
 };
 
+const previewLogo = (req, res) => {
+  const fileName = 'logotonasa-teks.png';
+  // eslint-disable-next-line consistent-return
+  fs.readFile(path.join(__dirname, '..', '..', 'resources', `${fileName}`), (err, data) => {
+    if (err) {
+      console.log(err.message);
+      return res.send(err.message);
+    }
+    res.contentType('image/png');
+    res.send(data);
+  });
+};
+
 module.exports = {
+  previewLogo,
   createLaporan,
   getLaporanByNoProyekKont,
   getLaporanDetail,
