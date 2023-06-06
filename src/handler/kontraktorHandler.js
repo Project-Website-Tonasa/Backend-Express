@@ -111,63 +111,81 @@ const createKontraktor = async (req, res) => {
       password,
       confirmPassword,
     } = req.body;
-
+    let resData = {};
+    console.log(noProyek);
     const noProyekStr = arraySeparator(noProyek);
-    const qGetData = {
-      text: `SELECT id_datum, no_proyek FROM data WHERE no_proyek in (${noProyekStr}) ORDER BY id_datum ASC`,
-    };
-    const resData = await pool.query(qGetData);
-
-    const idDatum = [];
-    for (let i = 0; i < noProyek.length; i += 1) {
-      if (!resData.rows[i]) {
-        throw new InvariantError(`noProyek ${noProyek[i]} tidak valid`);
-      }
-      idDatum.push(resData.rows[i].id_datum);
-    }
-
-    const arrIdStr = arraySeparator(idDatum);
-    const qGetKon = {
-      text: `SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE k.id_datum in (${arrIdStr}) ORDER BY id_datum ASC`,
-    };
-    const resKon = await pool.query(qGetKon);
-    for (let i = 0; i < resKon.rows.length; i += 1) {
-      if (resKon.rows[i]) {
-        throw new InvariantError(`Gagal membuat akun kontraktor. noProyek ${resKon.rows[i].no_proyek} telah digunakan di akun kontraktor lain`);
-      }
-    }
-
+    let qNoKontrak;
     const hashPassword = bcrypt.hashSync(password, 8);
     if (password !== confirmPassword) {
       throw new InvariantError('Gagal membuat akun kontraktor. Password dan konfirmasi password tidak sama');
     }
+    if (noProyekStr) {
+      const qGetData = {
+        text: `SELECT id_datum, no_proyek FROM data WHERE no_proyek in (${noProyekStr}) ORDER BY id_datum ASC`,
+      };
+      resData = await pool.query(qGetData);
+      console.log('test1');
 
-    const qAddUser = {
-      text: 'INSERT INTO users (id, username, password, role) VALUES (DEFAULT, $1, $2, $3) RETURNING id;',
-      values: [username, hashPassword, 'kontraktor'],
-    };
-    const resUser = await pool.query(qAddUser);
+      const idDatum = [];
+      for (let i = 0; i < noProyek.length; i += 1) {
+        if (!resData.rows[i]) {
+          throw new InvariantError(`Gagal membuat akun kontraktor. noProyek ${noProyek[i]} tidak valid`);
+        }
+        idDatum.push(resData.rows[i].id_datum);
+      }
 
-    const promises = [];
-    let qNoKontrak;
-    for (let i = 0; i < resData.rows.length; i += 1) {
+      const arrIdStr = arraySeparator(idDatum);
+      const qGetKon = {
+        text: `SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE k.id_datum in (${arrIdStr}) ORDER BY id_datum ASC`,
+      };
+      const resKon = await pool.query(qGetKon);
+      for (let i = 0; i < resKon.rows.length; i += 1) {
+        if (resKon.rows[i]) {
+          throw new InvariantError(`Gagal membuat akun kontraktor. noProyek ${resKon.rows[i].no_proyek} telah digunakan di akun kontraktor lain`);
+        }
+      }
+      const qAddUser = {
+        text: 'INSERT INTO users (id, username, password, role) VALUES (DEFAULT, $1, $2, $3) RETURNING id;',
+        values: [username, hashPassword, 'kontraktor'],
+      };
+      const resUser = await pool.query(qAddUser);
+
+      const promises = [];
+      for (let i = 0; i < resData.rows.length; i += 1) {
+        qNoKontrak = {
+          text: 'INSERT INTO kontraktor_conn (id, id_datum, id_user) VALUES (DEFAULT, $1, $2)',
+          values: [
+            resData.rows[i].id_datum,
+            resUser.rows[0].id,
+          ],
+        };
+
+        promises.push(pool.query(qNoKontrak));
+      }
+      await Promise.all(promises);
+    } else {
+      console.log('test');
+      const qAddUser = {
+        text: 'INSERT INTO users (id, username, password, role) VALUES (DEFAULT, $1, $2, $3) RETURNING id;',
+        values: [username, hashPassword, 'kontraktor'],
+      };
+      const resUser = await pool.query(qAddUser);
       qNoKontrak = {
         text: 'INSERT INTO kontraktor_conn (id, id_datum, id_user) VALUES (DEFAULT, $1, $2)',
         values: [
-          resData.rows[i].id_datum,
+          null,
           resUser.rows[0].id,
         ],
       };
-
-      promises.push(pool.query(qNoKontrak));
+      await pool.query(qNoKontrak);
     }
-    await Promise.all(promises);
 
     return res.status(201).send({
       status: 'success',
       message: 'Register Successfull!',
     });
   } catch (e) {
+    console.log(e.message);
     if (e instanceof ClientError) {
       return res.status(400).send({
         status: 'fail',
@@ -191,7 +209,7 @@ const updateKontraktor = async (req, res) => {
       newPass,
       confirmNewPass,
     } = req.body;
-
+    let qNoKontrak;
     const qGetUser = {
       text: 'SELECT id, password, role FROM users WHERE id=$1',
       values: [id],
@@ -204,46 +222,61 @@ const updateKontraktor = async (req, res) => {
 
     if (noProyek) {
       const noProyekStr = arraySeparator(noProyek);
-      const qGetData = {
-        text: `SELECT id_datum, no_proyek FROM data WHERE no_proyek in (${noProyekStr}) ORDER BY id_datum ASC`,
-      };
-      const resData = await pool.query(qGetData);
-      const idDatum = [];
-      for (let i = 0; i < noProyek.length; i += 1) {
-        if (!resData.rows[i]) {
-          throw new InvariantError(`noProyek ${noProyek[i]} tidak valid`);
+      if (noProyekStr) {
+        const qGetData = {
+          text: `SELECT id_datum, no_proyek FROM data WHERE no_proyek in (${noProyekStr}) ORDER BY id_datum ASC`,
+        };
+        const resData = await pool.query(qGetData);
+        const idDatum = [];
+        for (let i = 0; i < noProyek.length; i += 1) {
+          if (!resData.rows[i]) {
+            throw new InvariantError(`noProyek ${noProyek[i]} tidak valid`);
+          }
+          idDatum.push(resData.rows[i].id_datum);
         }
-        idDatum.push(resData.rows[i].id_datum);
-      }
-      const arrIdStr = arraySeparator(idDatum);
-      const qGetKon = {
-        text: `SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE k.id_datum in (${arrIdStr}) ORDER BY id_datum ASC`,
-      };
-      const resKon = await pool.query(qGetKon);
-      for (let i = 0; i < resKon.rows.length; i += 1) {
-        // eslint-disable-next-line radix
-        if (resKon.rows[i].id_user !== parseInt(id) && resKon.rows[i]) {
-          throw new InvariantError(`Gagal mengubah data kontraktor. noProyek ${resKon.rows[i].no_proyek} telah digunakan di akun kontraktor lain`);
+        const arrIdStr = arraySeparator(idDatum);
+        const qGetKon = {
+          text: `SELECT k.id_datum, k.id_user, d.no_proyek FROM kontraktor_conn AS k INNER JOIN data AS d ON k.id_datum = d.id_datum WHERE k.id_datum in (${arrIdStr}) ORDER BY id_datum ASC`,
+        };
+        const resKon = await pool.query(qGetKon);
+        for (let i = 0; i < resKon.rows.length; i += 1) {
+          // eslint-disable-next-line radix
+          if (resKon.rows[i].id_user !== parseInt(id) && resKon.rows[i]) {
+            throw new InvariantError(`Gagal mengubah data kontraktor. noProyek ${resKon.rows[i].no_proyek} telah digunakan di akun kontraktor lain`);
+          }
         }
-      }
-      const qDelKontrak = {
-        text: 'DELETE FROM kontraktor_conn WHERE id_user = $1',
-        values: [id],
-      };
-      await pool.query(qDelKontrak);
-      const promises = [];
-      let qNoKontrak;
-      for (let i = 0; i < resData.rows.length; i += 1) {
+        const qDelKontrak = {
+          text: 'DELETE FROM kontraktor_conn WHERE id_user = $1',
+          values: [id],
+        };
+        await pool.query(qDelKontrak);
+        const promises = [];
+        for (let i = 0; i < resData.rows.length; i += 1) {
+          qNoKontrak = {
+            text: 'INSERT INTO kontraktor_conn (id, id_datum, id_user) VALUES (DEFAULT, $1, $2)',
+            values: [
+              resData.rows[i].id_datum,
+              id,
+            ],
+          };
+          promises.push(pool.query(qNoKontrak));
+        }
+        await Promise.all(promises);
+      } else {
+        const qDelKontrak = {
+          text: 'DELETE FROM kontraktor_conn WHERE id_user = $1',
+          values: [id],
+        };
+        await pool.query(qDelKontrak);
         qNoKontrak = {
           text: 'INSERT INTO kontraktor_conn (id, id_datum, id_user) VALUES (DEFAULT, $1, $2)',
           values: [
-            resData.rows[i].id_datum,
+            null,
             id,
           ],
         };
-        promises.push(pool.query(qNoKontrak));
+        await pool.query(qNoKontrak);
       }
-      await Promise.all(promises);
     }
 
     const qUpUsername = {
