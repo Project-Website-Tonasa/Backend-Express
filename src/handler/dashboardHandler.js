@@ -27,7 +27,7 @@ const getProgress = async (req, res) => {
     let queryGet;
     if (idUser) {
       queryGet = {
-        text: "SELECT COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'leading') as leading, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'late') as late, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'on track') as onTrack FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE k.id_user= $1, LOWER(d.status) = 'in progress' AND d.tahun = $2;",
+        text: "SELECT COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'leading') as leading, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'late') as late, COUNT(d.id_datum) FILTER (WHERE LOWER(d.progress) = 'on track') as onTrack FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE k.id_user= $1 AND LOWER(d.status) = 'in progress' AND d.tahun = $2;",
         values: [idUser, tahun],
       };
     } else {
@@ -73,28 +73,28 @@ const getListProyekByProgress = async (req, res) => {
 
     if (idUser) {
       queryGetLeading = {
-        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'leading' AND k.id_user= $1 AND d.tahun = $2;",
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'leading' AND LOWER(d.status) = 'in progress' AND k.id_user= $1 AND d.tahun = $2;",
         values: [idUser, tahun],
       };
       queryGetLate = {
-        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'late' AND k.id_user= $1 ANd d.tahun = $2;",
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'late' AND  LOWER(d.status) = 'in progress' AND k.id_user= $1 AND d.tahun = $2;",
         values: [idUser, tahun],
       };
       queryGetOnTrack = {
-        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'on track' AND k.id_user= $1 AND d.tahun = $2;",
+        text: "SELECT nm_proyek, nm_rekanan FROM data as d INNER JOIN kontraktor_conn as k ON d.id_datum = k.id_datum WHERE LOWER(d.progress) = 'on track' AND LOWER(d.status) = 'in progress' AND k.id_user= $1 AND d.tahun = $2;",
         values: [idUser, tahun],
       };
     } else {
       queryGetLeading = {
-        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'leading' AND tahun = $1;",
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'leading' AND LOWER(d.status) = 'in progress' AND tahun = $1;",
         values: [tahun],
       };
       queryGetLate = {
-        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'late' AND tahun = $1;",
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'late' AND LOWER(d.status) = 'in progress' AND tahun = $1;",
         values: [tahun],
       };
       queryGetOnTrack = {
-        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'on track' AND tahun = $1",
+        text: "SELECT id_datum, nm_proyek, nm_rekanan FROM data as d WHERE LOWER(d.progress) = 'on track' AND LOWER(d.status) = 'in progress' AND tahun = $1",
         values: [tahun],
       };
     }

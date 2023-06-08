@@ -13,6 +13,7 @@ router.get('/detailLaporan/:id', [authJwt.verifyToken, authJwt.isAdminOrStafOrKo
 router.get('/detaillapHarian/:id', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], laporanHandler.getDetailLapHarian);
 router.put('/detaillapHarian/:id', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], laporanHandler.editDetailLapHarian);
 router.put('/laporan/edit/:id', [authJwt.verifyToken, authJwt.isAdminOrStafOrKontraktor], uploadFile.upload.single('file'), laporanHandler.updateLaporan);
+router.get('/logo', laporanHandler.previewLogo);
 
 // STAFF OR ADMIN FEATURE
 router.get('/laporan', [authJwt.verifyToken, authJwt.isAdminOrStaff], laporanHandler.getAllLaporan);
